@@ -8,9 +8,9 @@
     "type": "specialpage",
     "SpecialPages": {
         "GitAccess": "SpecialGitAccess"
-    }
+    },
     "AutoLoadClasses": {
         "SpecialGitAccess": "SpecialGitAccess.php"
-    }
+    },
     "manifest_version": 1
 }
