@@ -12,7 +12,7 @@
     "SpecialPages": {
         "GitAccess": "SpecialGitAccess"
     },
-    "AutoLoadClasses": {
+    "AutoloadClasses": {
         "SpecialGitAccess": "SpecialGitAccess.php"
     },
     "manifest_version": 1
