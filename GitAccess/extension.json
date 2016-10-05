@@ -6,6 +6,9 @@
     "version": "1.0",
     "license-name": "AGPL-3.0",
     "type": "specialpage",
+	"ExtensionMessagesFiles": {
+		"GitAccessAlias": "GitAccess.alias.php",
+	},
     "SpecialPages": {
         "GitAccess": "SpecialGitAccess"
     },
