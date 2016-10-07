@@ -22,6 +22,11 @@ class SpecialGitAccess extends SpecialPage
             
         }
     }
+    
+    public function doesWrites()
+    {
+        return true; // Overload class to show that this may perform database writes
+    }
 }
 
 
