@@ -13,9 +13,8 @@ class SpecialGitAccess extends SpecialPage
         
         if (!$subpath) // Show information page
         {
-            $output->setPageTitle("Git Access");
-            $output->addWikiText("You may access the content of this wiki via Git like this:");
-            $output->addWikiText("<code>git clone {{SERVER}}/Special:GitAccess/{{SITENAME}}.git</code>");
+            $output->setPageTitle($this->msg("gitaccess"));
+            $output->addWikiText($this->msg("gitaccess-specialpagehome-loggedin-info"));
         }
         
         else if ($subpath) // Generate git repository objects

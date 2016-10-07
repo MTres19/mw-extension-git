@@ -13,3 +13,10 @@ $specialPageAliases = array();
 $specialPageAliases['en'] = array(
 	'GitAccess' => array( 'GitAccess' ),
 );
+
+/** Deutsch (German) */
+$specialPageAliases['de'] = array(
+    'GitAccess' => array( 'GitZugang' ),
+);
+
+?>

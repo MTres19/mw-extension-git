@@ -1,0 +1,10 @@
+{
+    "@metadata": {
+        "authors": [
+            "Matthew Trescott"
+        ]
+    },
+    "gitaccess": "The name of this extension",
+    "gitaccess-desc": "Brief description of this extension",
+    "gitaccess-specialpagehome-loggedin-info": "Infomation on how to clone the wiki contents with Git. Only displayed to logged in users."
+}
