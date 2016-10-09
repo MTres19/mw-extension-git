@@ -14,12 +14,19 @@ class SpecialGitAccess extends SpecialPage
         if (!isset($subpath) && !isset($_GET["service"])) // Show information page
         {
             $output->setPageTitle($this->msg("gitaccess"));
+            $output->addWikiText($this->msg("gitaccess-desc"));
             $output->addWikiText($this->msg("gitaccess-specialpagehome-loggedin-info"));
         }
         
-        else if ($subpath) // Generate git repository objects
+        else if ($subpath && isset($_GET["service"])) // Generate git repository objects
         {
             
+        }
+        
+        else
+        {
+            $output->setPageTitle($this->msg("gitaccess"));
+            $output->addWikiText($this->msg("gitaccess-error-dumbhttpaccess"));
         }
     }
     
