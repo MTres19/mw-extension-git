@@ -11,7 +11,7 @@ class SpecialGitAccess extends SpecialPage
     {
         $output = $this->getOutput();
         
-        if (!$subpath) // Show information page
+        if (!isset($subpath) && !isset($_GET["service"])) // Show information page
         {
             $output->setPageTitle($this->msg("gitaccess"));
             $output->addWikiText($this->msg("gitaccess-specialpagehome-loggedin-info"));
