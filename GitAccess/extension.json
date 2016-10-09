@@ -13,7 +13,8 @@
         "GitAccess": "SpecialGitAccess"
     },
     "AutoloadClasses": {
-        "SpecialGitAccess": "SpecialGitAccess.php"
+        "SpecialGitAccess": "SpecialGitAccess.php",
+        "GitRepository": "includes/repo_manager.php"
     },
     "manifest_version": 1
 }

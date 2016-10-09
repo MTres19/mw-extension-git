@@ -18,8 +18,10 @@ class SpecialGitAccess extends SpecialPage
             $output->addWikiText($this->msg("gitaccess-specialpagehome-loggedin-info"));
         }
         
-        else if ($subpath && isset($_GET["service"])) // Generate git repository objects
+        else if ($subpath && isset($_GET["service"])) // Generate git repo
         {
+            $repo = new GitRepository();
+            
             
         }
         
