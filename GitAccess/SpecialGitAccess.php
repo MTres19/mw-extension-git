@@ -20,9 +20,25 @@ class SpecialGitAccess extends SpecialPage
         
         else if ($subpath && isset($_GET["service"])) // Generate git repo
         {
-            $repo = new GitRepository();
+            $token = strtok($subpath, "/");
+            $path_objects = array();
+            while ($token)
+            {
+                $token = strtok("/");
+                array_push($path_objects, $token);
+            }
             
+            $repo = new GitRepository($path_objects);
             
+            if ($_GET["service"] = "git-upload-pack")
+            {
+            
+            }
+            
+            else if ($_GET["service"] = "git-receive-pack")
+            {
+            
+            }
         }
         
         else
