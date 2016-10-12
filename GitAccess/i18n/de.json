@@ -1,0 +1,10 @@
+{
+    "@metadata": {
+        "authors": [
+            "Matthew Trescott"
+        ]
+    },
+    "gitaccess": "Git-Zugang",
+    "gitaccess-desc": "Mit Git-Zugang, kann man ein MediaWiki-wiki mit Git zugreifen.",
+    "gitaccess-specialpagehome-loggedin-info": "Man darf dieses wiki zugreifen so wie dieses:\n\n<code>git clone {{SERVER}}/Special:GitAccess/{{SITENAME}}.git</code>"
+}

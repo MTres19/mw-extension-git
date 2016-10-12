@@ -9,6 +9,11 @@
     "ExtensionMessagesFiles": {
         "GitAccessAlias": "GitAccess.alias.php"
     },
+    "MessagesDirs": {
+        "GitAccess": [
+            "i18n"
+        ]
+    },
     "SpecialPages": {
         "GitAccess": "SpecialGitAccess"
     },
