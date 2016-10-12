@@ -1,8 +1,10 @@
 {
-    "name": "GitAccess",
+    "name": "Git Access",
+    "namemsg": "gitaccess",
     "author": "Matthew Trescott",
     "url": "https://github.com/MTres19/mw-extension-git",
     "description": "Adds the Special:GitAccess page which allows for reading and modifying the wiki via the Git revision control system",
+    "descriptionmsg": "gitaccess-desc",
     "version": "1.0",
     "license-name": "AGPL-3.0",
     "type": "specialpage",
@@ -13,6 +15,14 @@
         "GitAccess": [
             "i18n"
         ]
+    },
+    "AvailableRights": [
+        "gitaccess"
+    ],
+    "GroupPermissions": {
+        "sysop": {
+            "gitaccess": true
+        }
     },
     "SpecialPages": {
         "GitAccess": "SpecialGitAccess"

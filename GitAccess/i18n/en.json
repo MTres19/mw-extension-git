@@ -5,6 +5,7 @@
         ]
     },
     "gitaccess": "Git Access",
+    "action-gitaccess": "access the content of this wiki with Git",
     "gitaccess-desc": "Git Access allows access to a MediaWiki wiki via Git.",
     "gitaccess-specialpagehome-loggedin-info": "You may access the content of this wiki via Git like this:\n\n<code>git clone {{SERVER}}/Special:GitAccess/{{SITENAME}}.git</code>",
     "gitaccess-error-dumbhttpaccess": "Error: It appears that you are attempting to access this repository without a smart HTTPS protocol-enabled Git client. This extension does not support the \"dumb\" HTTP protocol."

@@ -5,6 +5,7 @@
         ]
     },
     "gitaccess": "The name of this extension",
+    "action-gitaccess": "Permission description for gitaccess. This is included in sentences, so it should not start with a capital letter.",
     "gitaccess-desc": "Brief description of this extension",
     "gitaccess-specialpagehome-loggedin-info": "Infomation on how to clone the wiki contents with Git. Only displayed to logged in users.",
     "gitaccess-error-dumbhttpaccess": "Error shown when a user attempts to download git repository files without the smart HTTP protocol"
