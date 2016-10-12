@@ -12,7 +12,7 @@ class SpecialGitAccess extends SpecialPage
         $output = $this->getOutput();
         $request = $this->getRequest();
         
-        if (!isset($subpath) && !isset($request->getText("service"))) // Show information page
+        if (!isset($subpath) && !isset($request->getVal("service"))) // Show information page
         {
             $output->setPageTitle($this->msg("gitaccess"));
             $output->addWikiText($this->msg("gitaccess-desc"));
@@ -35,7 +35,7 @@ class SpecialGitAccess extends SpecialPage
             }
         }
         
-        else if ($subpath && isset($request->getText("service"))) // Generate git repo
+        else if ($subpath && isset($request->getVal("service"))) // Generate git repo
         {
             $output->disable(); // Take over output
             
@@ -49,12 +49,12 @@ class SpecialGitAccess extends SpecialPage
             
             $repo = new GitRepository($path_objects);
             
-            if ($request->getText("service") = "git-upload-pack")
+            if ($request->getVal("service") = "git-upload-pack")
             {
             
             }
             
-            else if ($request->getText("service") = "git-receive-pack")
+            else if ($request->getVal("service") = "git-receive-pack")
             {
             
             }
