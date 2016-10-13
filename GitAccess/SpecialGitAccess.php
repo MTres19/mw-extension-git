@@ -2,17 +2,21 @@
 
 class SpecialGitAccess extends SpecialPage
 {
+    protected $output;
+    protected $request;
+    protected $response;
+    
     public function __construct()
     {
         parent::__construct("GitAccess", "gitaccess"); // Sysops only
+        $this->output = $this->getOutput();
+        $this->request = $this->getRequest();
+        $this->response = $request->response();
     }
     
     public function execute($subpath)
     {
-        $output = $this->getOutput();
-        $request = $this->getRequest();
-        
-        if (!isset($subpath) && !isset($request->getVal("service"))) // Show information page
+        if (!isset($subpath) && !isset($this->request->getVal("service"))) // Show information page
         {
             $output->setPageTitle($this->msg("gitaccess"));
             $output->addWikiText($this->msg("gitaccess-desc"));
@@ -35,7 +39,7 @@ class SpecialGitAccess extends SpecialPage
             }
         }
         
-        else if ($subpath && isset($request->getVal("service"))) // Generate git repo
+        else if ($subpath && isset($this->request->getVal("service"))) // Generate git repo
         {
             $output->disable(); // Take over output
             
@@ -49,12 +53,12 @@ class SpecialGitAccess extends SpecialPage
             
             $repo = new GitRepository($path_objects);
             
-            if ($request->getVal("service") = "git-upload-pack")
+            if ($this->request->getVal("service") = "git-upload-pack")
             {
             
             }
             
-            else if ($request->getVal("service") = "git-receive-pack")
+            else if ($this->request->getVal("service") = "git-receive-pack")
             {
             
             }
@@ -70,6 +74,38 @@ class SpecialGitAccess extends SpecialPage
     public function doesWrites()
     {
         return true; // Overload class to show that this may perform database writes
+    }
+    
+    protected function auth()
+    {
+        $user = User::newFromName($_SERVER["PHP_AUTH_USER"]);
+        
+        if ($user->getID() = 0)
+        {
+            $response->header('WWW-Authenticate: Basic realm="MediaWiki"');
+            $response->header("HTTP/1.1 401 Unauthorized");
+        }
+        else
+        {
+            if ("USERNAME AND PASSWORD MATCH" && $user->isAllowed("gitaccess"))
+            {
+                return true;
+            }
+            elseif ("USERNAME AND PASSWORD MATCH" && !$user->isAllowed("gitaccess"))
+            {
+                // echo permissions error or something
+                return false;
+            }
+            elseif ("USERNAME AND PASSWORD DON'T MATCH")
+            {
+                // echo wrong password message or something
+                return false;
+            }
+            else
+            {
+                return false;
+            }
+        }
     }
 }
 
