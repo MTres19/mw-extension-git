@@ -78,31 +78,53 @@ class SpecialGitAccess extends SpecialPage
     
     protected function auth()
     {
-        $user = User::newFromName($_SERVER["PHP_AUTH_USER"]);
+        // Auth
+        $authManagerSingleton = \MediaWiki\Auth\AuthManager::singleton();
         
-        if ($user->getID() = 0)
+        $user = User::newFromName($_SERVER["PHP_AUTH_USER"]); // Create User instance and fetch data
+        
+        if ($user->getID() = 0) /* No username sent */
         {
             $response->header('WWW-Authenticate: Basic realm="MediaWiki"');
             $response->header("HTTP/1.1 401 Unauthorized");
         }
         else
         {
-            if ("USERNAME AND PASSWORD MATCH" && $user->isAllowed("gitaccess"))
+            // Create AuthenticationRequest---add username and password to object using loadRequestsFromSubmission()
+            $authenticationRequest = \MediaWiki\Auth\AuthenticationRequest::loadRequestsFromSubmission(
+                $authManagerSingleton->getAuthenticationRequests($authManagerSingleton->ACTION_LOGIN),
+                [
+                    "username" => $_SERVER["PHP_AUTH_USER"],
+                    "password" => $_SERVER["PHP_AUTH_PW"],
+                ]
+            );
+            
+            // Check password
+            $authResult = $authManagerSingleton->beginAuthentication($authenticationRequest, ':null');
+            
+            if ($authResult->status == $authResult::PASS && $user->isAllowed("gitaccess"))
             {
                 return true;
             }
-            elseif ("USERNAME AND PASSWORD MATCH" && !$user->isAllowed("gitaccess"))
+            elseif ($authResult->status == $authResult::PASS && !$user->isAllowed("gitaccess"))
             {
-                // echo permissions error or something
+                $response->header('WWW-Authenticate: Basic realm="MediaWiki"');
+                $response->header("HTTP/1.1 401 Unauthorized");
+                
+                echo "Sorry, accessing this wiki with Git requires permissions which you do not have.";
                 return false;
             }
-            elseif ("USERNAME AND PASSWORD DON'T MATCH")
+            elseif ($authResult->status == $authResult::FAIL)
             {
-                // echo wrong password message or something
+                $response->header('WWW-Authenticate: Basic realm="MediaWiki"');
+                $response->header("HTTP/1.1 401 Unauthorized");
+                
+                echo "Invalid username or password.";
                 return false;
             }
             else
             {
+                echo "Unknown authentication error.";
                 return false;
             }
         }

@@ -8,6 +8,9 @@
     "version": "1.0",
     "license-name": "AGPL-3.0",
     "type": "specialpage",
+    "requires": {
+        "MediaWiki": ">= 1.27.0"
+    },
     "MessagesDirs": {
         "GitAccess": [
             "i18n"
