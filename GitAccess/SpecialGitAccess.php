@@ -126,6 +126,9 @@ class SpecialGitAccess extends SpecialPage
             }
             else
             {
+                $this->response->header('WWW-Authenticate: Basic realm="MediaWiki"');
+                $this->response->header("HTTP/1.1 401 Unauthorized");
+                
                 echo "Unknown authentication error.";
                 return false;
             }
