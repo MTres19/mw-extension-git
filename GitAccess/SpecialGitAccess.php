@@ -11,18 +11,18 @@ class SpecialGitAccess extends SpecialPage
         parent::__construct("GitAccess", "gitaccess"); // Sysops only
         $this->output = $this->getOutput();
         $this->request = $this->getRequest();
-        $this->response = $request->response();
+        $this->response = $this->request->response();
     }
     
     public function execute($subpath)
     {
         $request_service = $this->request->getText("service");
         
-        if (!isset($subpath) && !isset($request_service)) // Show information page
+        if (empty($subpath) && empty($request_service)) // Show information page
         {
-            $output->setPageTitle($this->msg("gitaccess"));
-            $output->addWikiText($this->msg("gitaccess-desc"));
-            $output->addWikiText($this->msg("gitaccess-specialpagehome-loggedin-info"));
+            $this->output->setPageTitle($this->msg("gitaccess"));
+            $this->output->addWikiText($this->msg("gitaccess-desc"));
+            $this->output->addWikiText($this->msg("gitaccess-specialpagehome-loggedin-info"));
             
             // Check permissions
             if (!$this->getUser()->isAllowed("gitaccess"))
@@ -41,9 +41,9 @@ class SpecialGitAccess extends SpecialPage
             }
         }
         
-        else if ($subpath && isset($request_service)) // Generate git repo
+        else if (isset($subpath) && !empty($request_service)) // Generate git repo
         {
-            $output->disable(); // Take over output
+            $this->output->disable(); // Take over output
             
             $token = strtok($subpath, "/");
             $path_objects = array();
@@ -68,8 +68,8 @@ class SpecialGitAccess extends SpecialPage
         
         else
         {
-            $output->setPageTitle($this->msg("gitaccess"));
-            $output->addWikiText($this->msg("gitaccess-error-dumbhttpaccess"));
+            $this->output->setPageTitle($this->msg("gitaccess"));
+            $this->output->addWikiText($this->msg("gitaccess-error-dumbhttpaccess"));
         }
     }
     
@@ -84,11 +84,11 @@ class SpecialGitAccess extends SpecialPage
         $authManagerSingleton = \MediaWiki\Auth\AuthManager::singleton();
         
         $user = User::newFromName($_SERVER["PHP_AUTH_USER"]); // Create User instance and fetch data
-        
-        if ($user->getID() = 0) /* No username sent */
+        $userID = $user->getID();
+        if ($userID = 0) /* No username sent */
         {
-            $response->header('WWW-Authenticate: Basic realm="MediaWiki"');
-            $response->header("HTTP/1.1 401 Unauthorized");
+            $this->response->header('WWW-Authenticate: Basic realm="MediaWiki"');
+            $this->response->header("HTTP/1.1 401 Unauthorized");
         }
         else
         {
@@ -110,16 +110,16 @@ class SpecialGitAccess extends SpecialPage
             }
             elseif ($authResult->status == $authResult::PASS && !$user->isAllowed("gitaccess"))
             {
-                $response->header('WWW-Authenticate: Basic realm="MediaWiki"');
-                $response->header("HTTP/1.1 401 Unauthorized");
+                $this->response->header('WWW-Authenticate: Basic realm="MediaWiki"');
+                $this->response->header("HTTP/1.1 401 Unauthorized");
                 
                 echo "Sorry, accessing this wiki with Git requires permissions which you do not have.";
                 return false;
             }
             elseif ($authResult->status == $authResult::FAIL)
             {
-                $response->header('WWW-Authenticate: Basic realm="MediaWiki"');
-                $response->header("HTTP/1.1 401 Unauthorized");
+                $this->response->header('WWW-Authenticate: Basic realm="MediaWiki"');
+                $this->response->header("HTTP/1.1 401 Unauthorized");
                 
                 echo "Invalid username or password.";
                 return false;
