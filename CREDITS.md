@@ -2,7 +2,7 @@
 
 Copyright © 2016 Matthew Trescott
 
-With help from paladox.
+With help from paladox, Skizzerz, tgr, and the MediaWiki community.
 
 --------------------------------------------------------------------------
 
