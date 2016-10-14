@@ -5,6 +5,7 @@
         ]
     },
     "gitaccess": "Git-Zugang",
-    "gitaccess-desc": "Mit Git-Zugang, kann man ein MediaWiki-wiki mit Git zugreifen.",
-    "gitaccess-specialpagehome-loggedin-info": "Man darf dieses wiki zugreifen so wie dieses:\n\n<code>git clone {{SERVER}}/Special:GitAccess/{{SITENAME}}.git</code>"
+    "gitaccess-desc": "Mit Git-Zugang, kann man ein MediaWiki-Wiki mit Git zugreifen.",
+    "gitaccess-specialpagehome-info": "Man darf dieses Wiki zugreifen so wie dieses:\n\n<code>git clone http(s):{{fullurl:Special:GitAccess}}/{{SERVERNAME}}.git</code>",
+    "gitaccess-specialpagehome-readonly": "Notiz: Dieses Wiki ist nicht schreibbar. Man darf nicht Inhalt mit <code>git push</code> hochladen."
 }

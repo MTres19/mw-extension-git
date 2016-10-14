@@ -22,7 +22,7 @@ class SpecialGitAccess extends SpecialPage
         {
             $this->output->setPageTitle($this->msg("gitaccess"));
             $this->output->addWikiText($this->msg("gitaccess-desc"));
-            $this->output->addWikiText($this->msg("gitaccess-specialpagehome-loggedin-info"));
+            $this->output->addWikiText($this->msg("gitaccess-specialpagehome-info"));
             
             // Check permissions
             if (!$this->getUser()->isAllowed("gitaccess"))
@@ -32,7 +32,7 @@ class SpecialGitAccess extends SpecialPage
             
             if (wfReadOnly())
             {
-                throw new ReadOnlyError;
+                $this->output->addWikiText($this->msg("gitaccess-specialpagehome-readonly"));
             }
             
             if ($this->getUser()->isBlocked())
