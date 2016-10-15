@@ -16,7 +16,9 @@ class SpecialGitAccess extends SpecialPage
     
     public function execute($subpath)
     {
-        $request_service = $this->request->getText("service");
+        //$request_service = $this->request->getText("service"); // Doesn't work when there is a query string for PHP too
+        $request_service;
+        sscanf($this->request->getFullRequestURL(), "?service=%s", $request_service);
         
         if (empty($subpath) && empty($request_service)) // Show information page
         {
@@ -45,24 +47,28 @@ class SpecialGitAccess extends SpecialPage
         {
             $this->output->disable(); // Take over output
             
-            $token = strtok($subpath, "/");
-            $path_objects = array();
-            while ($token)
+            if ($this->auth() == true) // Verify user, don't do anything on failure (auth() handles that)
             {
-                $token = strtok("/");
-                array_push($path_objects, $token);
-            }
-            
-            $repo = new GitRepository($path_objects);
-            
-            if ($request_service = "git-upload-pack")
-            {
-            
-            }
-            
-            else if ($request_service = "git-receive-pack")
-            {
-            
+                // Put subpath into an array for easy access
+                $token = strtok($subpath, "/");
+                $path_objects = array();
+                while ($token)
+                {
+                    $token = strtok("/");
+                    array_push($path_objects, $token);
+                }
+                
+                $repo = new GitRepository($path_objects);
+                
+                if ($request_service = "git-upload-pack")
+                {
+                
+                }
+                
+                elseif ($request_service = "git-receive-pack")
+                {
+                
+                }
             }
         }
         
@@ -70,6 +76,7 @@ class SpecialGitAccess extends SpecialPage
         {
             $this->output->setPageTitle($this->msg("gitaccess"));
             $this->output->addWikiText($this->msg("gitaccess-error-dumbhttpaccess"));
+            $this->output->addWikiText($this->request->getFullRequestURL());
         }
     }
     
