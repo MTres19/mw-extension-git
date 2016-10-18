@@ -16,9 +16,7 @@ class SpecialGitAccess extends SpecialPage
     
     public function execute($subpath)
     {
-        //$request_service = $this->request->getText("service"); // Doesn't work when there is a query string for PHP too
-        $request_service;
-        sscanf($this->request->getFullRequestURL(), "?service=%s", $request_service);
+        $request_service = $this->request->getText("service"); // NOTE: To get this value, URL rewriting is required!
         
         if (empty($subpath) && empty($request_service)) // Show information page
         {
@@ -62,12 +60,13 @@ class SpecialGitAccess extends SpecialPage
                 
                 if ($request_service = "git-upload-pack")
                 {
-                
+                    echo "Hello world";
+                    echo "git-upload-pack";
                 }
                 
                 elseif ($request_service = "git-receive-pack")
                 {
-                
+                    echo "git-receive-pack";
                 }
             }
         }
@@ -88,20 +87,22 @@ class SpecialGitAccess extends SpecialPage
     protected function auth()
     {
         // Auth
-        $authManagerSingleton = \MediaWiki\Auth\AuthManager::singleton();
+        $authManagerSingleton = MediaWiki\Auth\AuthManager::singleton();
+        $user = User::newFromName($_SERVER["PHP_AUTH_USER"]);
         
-        $user = User::newFromName($_SERVER["PHP_AUTH_USER"]); // Create User instance and fetch data
-        $userID = $user->getID();
-        if ($userID = 0) /* No username sent */
+        if (empty($user) || empty($_SERVER["PHP_AUTH_PW"])) /* No username sent */
         {
             $this->response->header('WWW-Authenticate: Basic realm="MediaWiki"');
             $this->response->header("HTTP/1.1 401 Unauthorized");
         }
         else
         {
-            // Create AuthenticationRequest---add username and password to object using loadRequestsFromSubmission()
-            $authenticationRequest = \MediaWiki\Auth\AuthenticationRequest::loadRequestsFromSubmission(
-                $authManagerSingleton->getAuthenticationRequests($authManagerSingleton->ACTION_LOGIN),
+            /* Create AuthenticationRequest---add username and password to object using loadRequestsFromSubmission()
+             * 
+             * The User parameter is needed because there is no session data provided by the git client.
+             */
+            $authenticationRequest = MediaWiki\Auth\AuthenticationRequest::loadRequestsFromSubmission(
+                $authManagerSingleton->getAuthenticationRequests($authManagerSingleton::ACTION_LOGIN, $user),
                 [
                     "username" => $_SERVER["PHP_AUTH_USER"],
                     "password" => $_SERVER["PHP_AUTH_PW"],
