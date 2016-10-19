@@ -20,63 +20,78 @@ class SpecialGitAccess extends SpecialPage
         
         if (empty($subpath) && empty($request_service)) // Show information page
         {
-            $this->output->setPageTitle($this->msg("gitaccess"));
-            $this->output->addWikiText($this->msg("gitaccess-desc"));
-            $this->output->addWikiText($this->msg("gitaccess-specialpagehome-info"));
-            
-            // Check permissions
-            if (!$this->getUser()->isAllowed("gitaccess"))
-            {
-                throw new PermissionsError("gitaccess");
-            }
-            
-            if (wfReadOnly())
-            {
-                $this->output->addWikiText($this->msg("gitaccess-specialpagehome-readonly"));
-            }
-            
-            if ($this->getUser()->isBlocked())
-            {
-                throw new UserBlockedError($this->getUser()->mBlock);
-            }
+            $this->showInfoPage();
         }
         
-        else if (isset($subpath) && !empty($request_service)) // Generate git repo
+        else if (!empty($subpath) && !empty($request_service)) // Generate git repo
         {
-            $this->output->disable(); // Take over output
-            
-            if ($this->auth() == true) // Verify user, don't do anything on failure (auth() handles that)
-            {
-                // Put subpath into an array for easy access
-                $token = strtok($subpath, "/");
-                $path_objects = array();
-                while ($token)
-                {
-                    $token = strtok("/");
-                    array_push($path_objects, $token);
-                }
-                
-                $repo = new GitRepository($path_objects);
-                
-                if ($request_service == "git-upload-pack")
-                {
-                    echo "Hello world";
-                    echo "git-upload-pack";
-                }
-                
-                elseif ($request_service == "git-receive-pack")
-                {
-                    echo "git-receive-pack";
-                }
-            }
+            $this->executeGitService($subpath, $request_service);
         }
         
         else
         {
+        
+            $this->showDumbHttpPage();
+        }
+    }
+    
+    public function showInfoPage()
+    {
+        $this->output->setPageTitle($this->msg("gitaccess"));
+        $this->output->addWikiText($this->msg("gitaccess-desc"));
+        $this->output->addWikiText($this->msg("gitaccess-specialpagehome-info"));
+        
+        // Check permissions
+        if (!$this->getUser()->isAllowed("gitaccess"))
+        {
+            throw new PermissionsError("gitaccess");
+        }
+        
+        if (wfReadOnly())
+        {
+            $this->output->addWikiText($this->msg("gitaccess-specialpagehome-readonly"));
+        }
+        
+        if ($this->getUser()->isBlocked())
+        {
+            throw new UserBlockedError($this->getUser()->mBlock);
+        }
+    }
+    
+    public function executeGitService($subpath, $request_service)
+    {
+        $this->output->disable(); // Take over output
+        
+        if ($this->auth() == true) // Verify user, don't do anything on failure (auth() handles that)
+        {
+            // Put subpath into an array for easy access
+            $token = strtok($subpath, "/");
+            $path_objects = array();
+            while ($token)
+            {
+                $token = strtok("/");
+                array_push($path_objects, $token);
+            }
+            
+            $repo = new GitRepository($path_objects);
+            
+            if ($request_service == "git-upload-pack")
+            {
+                echo "Hello world";
+                echo "git-upload-pack";
+            }
+            
+            elseif ($request_service == "git-receive-pack")
+            {
+                echo "git-receive-pack";
+            }
+        }
+    }
+    
+    public function showDumbHttpPage()
+    {
             $this->output->setPageTitle($this->msg("gitaccess"));
             $this->output->addWikiText($this->msg("gitaccess-error-dumbhttpaccess"));
-            $this->output->addWikiText($this->request->getFullRequestURL());
-        }
     }
     
     public function doesWrites()
