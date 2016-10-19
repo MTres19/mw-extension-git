@@ -58,13 +58,13 @@ class SpecialGitAccess extends SpecialPage
                 
                 $repo = new GitRepository($path_objects);
                 
-                if ($request_service = "git-upload-pack")
+                if ($request_service == "git-upload-pack")
                 {
                     echo "Hello world";
                     echo "git-upload-pack";
                 }
                 
-                elseif ($request_service = "git-receive-pack")
+                elseif ($request_service == "git-receive-pack")
                 {
                     echo "git-receive-pack";
                 }
