@@ -24,6 +24,10 @@
             "gitaccess": true
         }
     },
+    "config": {
+        "_prefix": "wg",
+        "GitAccessRepoName": "wiki"
+    },
     "SpecialPages": {
         "GitAccess": "SpecialGitAccess"
     },

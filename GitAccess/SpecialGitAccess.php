@@ -37,9 +37,12 @@ class SpecialGitAccess extends SpecialPage
     
     public function showInfoPage()
     {
+        global $wgCanonicalServer, $wgScriptPath, $wgGitAccessRepoName;
+        
         $this->output->setPageTitle($this->msg("gitaccess"));
         $this->output->addWikiText($this->msg("gitaccess-desc"));
         $this->output->addWikiText($this->msg("gitaccess-specialpagehome-info"));
+        $this->output->addWikiText("<code><nowiki>git clone " . $wgCanonicalServer . $wgScriptPath . '/index.php?title=Special:GitAccess/' . $wgGitAccessRepoName . '.git</nowiki></code>');
         
         // Check permissions
         if (!$this->getUser()->isAllowed("gitaccess"))
@@ -77,7 +80,6 @@ class SpecialGitAccess extends SpecialPage
             
             if ($request_service == "git-upload-pack")
             {
-                echo "Hello world";
                 echo "git-upload-pack";
             }
             
