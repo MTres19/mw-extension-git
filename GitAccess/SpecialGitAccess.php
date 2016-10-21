@@ -135,10 +135,9 @@ class SpecialGitAccess extends SpecialPage
             }
             elseif ($authResult->status == $authResult::PASS && !$user->isAllowed("gitaccess"))
             {
-                $this->response->header('WWW-Authenticate: Basic realm="MediaWiki"');
-                $this->response->header("HTTP/1.1 401 Unauthorized");
+                $this->response->header("HTTP/1.1 403 Forbidden");
                 
-                echo "Sorry, accessing this wiki with Git requires permissions which you do not have.";
+                echo "Sorry, accessing this wiki with Git requires permissions which you do not have." . PHP_EOL;
                 return false;
             }
             elseif ($authResult->status == $authResult::FAIL)
@@ -146,15 +145,14 @@ class SpecialGitAccess extends SpecialPage
                 $this->response->header('WWW-Authenticate: Basic realm="MediaWiki"');
                 $this->response->header("HTTP/1.1 401 Unauthorized");
                 
-                echo "Invalid username or password.";
                 return false;
             }
             else
             {
                 $this->response->header('WWW-Authenticate: Basic realm="MediaWiki"');
-                $this->response->header("HTTP/1.1 401 Unauthorized");
+                $this->response->header("HTTP/1.1 501 Not Implemented");
                 
-                echo "Unknown authentication error.";
+                echo "Your request cannot be processed as authentication requires further information." . PHP_EOL;
                 return false;
             }
         }
