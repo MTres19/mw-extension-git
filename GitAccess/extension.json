@@ -33,7 +33,8 @@
     },
     "AutoloadClasses": {
         "SpecialGitAccess": "SpecialGitAccess.php",
-        "GitRepository": "includes/repo_manager.php"
+        "GitRepository": "includes/repo_manager.php",
+        "GitClientCommunication": "includes/communication_manager.php"
     },
     "manifest_version": 1
 }
