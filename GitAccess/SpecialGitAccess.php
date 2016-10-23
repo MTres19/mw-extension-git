@@ -25,12 +25,20 @@ class SpecialGitAccess extends SpecialPage
         
         else if (!empty($subpath) && !empty($request_service)) // Generate git repo
         {
-            $this->executeGitService($subpath, $request_service);
+            // Put subpath into an array for easy access
+            $token = strtok($subpath, "/");
+            $path_objects = array();
+            while ($token)
+            {
+                array_push($path_objects, $token);
+                $token = strtok("/");
+            }
+            
+            $this->executeGitService($path_objects, $request_service);
         }
         
         else
         {
-        
             $this->showDumbHttpPage();
         }
     }
@@ -61,40 +69,56 @@ class SpecialGitAccess extends SpecialPage
         }
     }
     
-    public function executeGitService($subpath, $request_service)
+    public function executeGitService($path, $request_service)
     {
-        $this->output->disable(); // Take over output
-        $communication = new GitClientCommunication($this->request, $this->response, $subpath);
+        global $wgGitAccessRepoName;
         
-        if ($communication->auth() == true) // Verify user, don't do anything on failure (auth() handles that)
+        /* This provides opportunity for other repository export options.
+         * 
+         * In the future, $path[0], which contains the repo name, might contain
+         * something other than $wgGitAccessRepoName, like a special repository
+         * that only includes a single wiki namespace, or the like.
+         */
+        $testVar = $wgGitAccessRepoName . ".git";
+        
+        switch ($path[0])
         {
-            // Put subpath into an array for easy access
-            $token = strtok($subpath, "/");
-            $path_objects = array();
-            while ($token)
-            {
-                $token = strtok("/");
-                array_push($path_objects, $token);
-            }
-            
-            $repo = new GitRepository($path_objects);
-            
-            if ($request_service == "git-upload-pack")
-            {
-                echo "git-upload-pack";
-            }
-            
-            elseif ($request_service == "git-receive-pack")
-            {
-                echo "git-receive-pack";
-            }
+            case $testVar:
+                $method = "FULL_WIKI";
+                break;
+            default:
+                $this->response->header("HTTP/1.1 404 Not Found");
+                $this->output->setPageTitle("404");
+                $this->output->addWikiText($this->msg("gitaccess-error-invalidrepo"));
+        }
+        
+        switch ($method)
+        {
+            case "FULL_WIKI":
+                $communication = new GitClientCommunication($this->output, $this->request, $this->response, $path);
+                
+                if ($communication->auth() == true) // Verify user, don't do anything on failure (auth() handles that)
+                {
+                    if ($request_service == "git-upload-pack")
+                    {
+                        echo "git-upload-pack";
+                    }
+                    
+                    elseif ($request_service == "git-receive-pack")
+                    {
+                        echo "git-receive-pack";
+                    }
+                }
+                
+                break;
         }
     }
     
     public function showDumbHttpPage()
     {
-            $this->output->setPageTitle($this->msg("gitaccess"));
-            $this->output->addWikiText($this->msg("gitaccess-error-dumbhttpaccess"));
+        $this->response->header("HTTP/1.1 400 Bad Request");
+        $this->output->setPageTitle($this->msg("gitaccess"));
+        $this->output->addWikiText($this->msg("gitaccess-error-dumbhttpaccess"));
     }
     
     public function doesWrites()

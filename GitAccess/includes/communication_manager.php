@@ -2,15 +2,19 @@
 
 class GitClientCommunication
 {
+    protected $output;
     protected $requst;
     protected $response;
     protected $path;
     
-    public function __construct(&$request, &$response, $path)
+    public function __construct(&$output, &$request, &$response, $path)
     {
+        $this->output = $output;
         $this->request = $request;
         $this->response = $response;
         $this->path = $path;
+        
+        $this->output->disable(); // Take over output
     }
     
     public function auth()

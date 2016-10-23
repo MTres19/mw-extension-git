@@ -10,5 +10,6 @@
     "gitaccess-desc": "Brief description of this extension",
     "gitaccess-specialpagehome-info": "Infomation on how to clone the wiki contents with Git. Only displayed to logged-in sysop users by default. This message should not include a git clone command, as this is added automatically by the special page.",
     "gitaccess-specialpagehome-readonly": "Extra note shown when the wiki is in read-only mode",
-    "gitaccess-error-dumbhttpaccess": "Error shown when a user attempts to download git repository files without the smart HTTP protocol"
+    "gitaccess-error-dumbhttpaccess": "Error shown when a user attempts to download git repository files without the smart HTTP protocol",
+    "gitaccess-error-invalidrepo": "Error shown when a user attempts to access a repository under Special:GitAccess that does not exist (sent with a 404 code)"
 }

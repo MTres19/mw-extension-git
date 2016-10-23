@@ -10,5 +10,6 @@
     "gitaccess-desc": "Git Access allows access to a MediaWiki wiki via Git.",
     "gitaccess-specialpagehome-info": "You may access the content of this wiki via Git like this:",
     "gitaccess-specialpagehome-readonly": "Note: You may not push content to this wiki right now, as it is in read-only mode.",
-    "gitaccess-error-dumbhttpaccess": "Error: It appears that you are attempting to access this repository without a smart HTTPS protocol-enabled Git client. This extension does not support the \"dumb\" HTTP protocol."
+    "gitaccess-error-dumbhttpaccess": "Error: It appears that you are attempting to access this repository without a smart HTTPS protocol-enabled Git client. This extension does not support the \"dumb\" HTTP protocol.",
+    "gitaccess-error-invalidrepo": "Error: This repository does not exist. See [[Special:GitAccess]]"
 }
