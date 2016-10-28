@@ -11,7 +11,6 @@
 
 CREATE TABLE IF NOT EXISTS /*_*/git_status_modify_hash(
     commit_hash VARCHAR(40) NOT NULL,
-    commit_hash_parent VARCHAR(40),
     log_id INTEGER NOT NULL,
     FOREIGN KEY (commit_hash) REFERENCES git_hash(commit_hash),
     FOREIGN KEY (log_id) REFERENCES logging(log_id)

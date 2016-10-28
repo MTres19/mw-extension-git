@@ -11,7 +11,6 @@
 
 CREATE TABLE IF NOT EXISTS /*_*/git_edit_hash(
     commit_hash VARCHAR(40) NOT NULL,
-    commit_hash_parent VARCHAR(40),
     affected_rev_id INTEGER,
     affected_page_id INTEGER,
     FOREIGN KEY (commit_hash) REFERENCES git_hash(commit_hash)

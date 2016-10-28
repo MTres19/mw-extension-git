@@ -11,6 +11,5 @@
 
 CREATE TABLE IF NOT EXISTS /*_*/git_status_modify_hash(
     commit_hash VARCHAR(40) NOT NULL FOREIGN KEY REFERENCES git_hash(commit_hash),
-    commit_hash_parent VARCHAR(40),
     log_id INTEGER NOT NULL FOREIGN KEY REFERENCES logging(log_id)
 )/*$wgDBTableOptions*/;

@@ -8,7 +8,7 @@
 
 CREATE TABLE IF NOT EXISTS /*_*/git_hash(
     commit_hash VARCHAR(40) NOT NULL PRIMARY KEY,
-    commit_hash_parent VARCHAR(40),
+    commit_hash_parent VARCHAR(615),
     author_email VARCHAR(255),
     committer_name VARCHAR(255),
     committer_email VARCHAR(255)
