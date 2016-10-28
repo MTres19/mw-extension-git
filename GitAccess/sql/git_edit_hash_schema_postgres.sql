@@ -10,8 +10,13 @@
 
 
 CREATE TABLE IF NOT EXISTS /*_*/git_edit_hash(
+    -- The commit connected to this edit, in case of multiple
+    -- modifications per commit
     commit_hash VARCHAR(40) NOT NULL FOREIGN KEY REFERENCES git_hash(commit_hash),
-    affected_rev_id INTEGER,
-    affected_page_id INTEGER
+    
+    -- The revision ID referenced by the commit. This can't be a foreign
+    -- key as that would prevent pages being moved to the archive table.
+    -- The page ID can be found from the revision table.
+    affected_rev_id INTEGER
 ) /*$wgDBTableOptions*/;
     
