@@ -42,5 +42,18 @@
         "GitRepository": "includes/repo_manager.php",
         "GitClientCommunication": "includes/communication_manager.php"
     },
+    "namespaces": [
+        {
+            "id": 730,
+            "constant": "NS_GITACCESS_ROOT",
+            "name": "GitAccess_root",
+            "protection": "gitaccess"
+        },
+        {
+            "id": 731,
+            "constant": "NS_GITACCESS_ROOT_TALK",
+            "name": "GitAccess_root_talk"
+        }
+    ],
     "manifest_version": 1
 }
