@@ -31,8 +31,14 @@
     "SpecialPages": {
         "GitAccess": "SpecialGitAccess"
     },
+    "Hooks": {
+        "LoadExtensionSchemaUpdates": [
+            "GitAccessHooks::onLoadExtensionSchemaUpdates"
+        ]
+    },
     "AutoloadClasses": {
         "SpecialGitAccess": "SpecialGitAccess.php",
+        "GitAccessHooks": "GitAccessHooks.php",
         "GitRepository": "includes/repo_manager.php",
         "GitClientCommunication": "includes/communication_manager.php"
     },
