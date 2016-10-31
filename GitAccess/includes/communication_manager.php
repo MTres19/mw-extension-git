@@ -81,6 +81,30 @@ class GitClientCommunication
         }
     }
     
+    /* Doesn't work for last pkt-line, but that's easy because it's always 0000.
+     * Each pkt-line is a 4-character hex number denoting the length of that line,
+     * including its LF/CRLF character(s), and the length of the next hex number
+     * (which is always 4 except on the last line, or, depending on interpretation,
+     * the hex number itself.
+     */
+    public static function pktLineEncode($string)
+    {
+        $num = strlen($string) + 4;
+        return dechex($num) . $string;
+    }
+    
+    public static function pktLineDecode($string)
+    {
+        $length = hexdec(substr($string, 0, 3));
+        $pktLineContent = substr($string, 4);
+        
+        if ($length - 4 === strlen($pktLineContent))
+        {
+            return $pktLineContent;
+        }
+        else
+        {
+            return false;
+        }
+    }
 }
-
-?>
