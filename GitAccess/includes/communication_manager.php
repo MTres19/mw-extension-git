@@ -6,13 +6,20 @@ class GitClientCommunication
     protected $requst;
     protected $response;
     protected $path;
+    protected $type;
     
-    public function __construct(&$output, &$request, &$response, $path)
+    const TYPE_REF_DISCOVERY_UPLOAD = 0;
+    const TYPE_REF_DISCOVERY_RECEIVE = 1;
+    const TYPE_UPLOAD_PACK = 2;
+    const TYPE_RECEIVE_PACK = 3;
+    
+    public function __construct(&$output, &$request, &$response, $path, $type)
     {
         $this->output = $output;
         $this->request = $request;
         $this->response = $response;
         $this->path = $path;
+        $this->type = $type;
         
         $this->output->disable(); // Take over output
     }

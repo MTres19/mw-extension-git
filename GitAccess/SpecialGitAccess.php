@@ -17,23 +17,15 @@ class SpecialGitAccess extends SpecialPage
     public function execute($subpath)
     {
         $request_service = $this->request->getText("service"); // NOTE: To get this value, URL rewriting is required!
+        $path_objects = explode('/', $subpath); // Put subpath into an array for easy access
         
         if (empty($subpath) && empty($request_service)) // Show information page
         {
             $this->showInfoPage();
         }
         
-        else if (!empty($subpath) && !empty($request_service)) // Generate git repo
+        elseif (!empty($request_service) || $path_objects[1] == 'git-upload-pack' || $path_objects[1] == 'git-receive-pack')
         {
-            // Put subpath into an array for easy access
-            $token = strtok($subpath, "/");
-            $path_objects = array();
-            while ($token)
-            {
-                array_push($path_objects, $token);
-                $token = strtok("/");
-            }
-            
             $this->executeGitService($path_objects, $request_service);
         }
         
@@ -79,11 +71,11 @@ class SpecialGitAccess extends SpecialPage
          * something other than $wgGitAccessRepoName, like a special repository
          * that only includes a single wiki namespace, or the like.
          */
-        $testVar = $wgGitAccessRepoName . ".git";
+        $fullRepoName = $wgGitAccessRepoName . ".git";
         
         switch ($path[0])
         {
-            case $testVar:
+            case $fullRepoName:
                 $method = "FULL_WIKI";
                 break;
             default:
@@ -92,10 +84,33 @@ class SpecialGitAccess extends SpecialPage
                 $this->output->addWikiText($this->msg("gitaccess-error-invalidrepo"));
         }
         
+        // Determine request type
+        if ($path[1] === 'info' && $path[2] === 'refs' && $request_service === 'git-upload-pack')
+        {
+            $request_type = GitClientCommunication::TYPE_REF_DISCOVERY_UPLOAD;
+        }
+        elseif ($path[1] === 'info' && $path[2] === 'refs' && $request_service === 'git-receive-pack')
+        {
+            $request_type = GitClientCommunication::TYPE_REF_DISCOVERY_RECEIVE;
+        }
+        elseif ($path[1] === 'git-upload-pack')
+        {
+            $request_type = GitClientCommunication::TYPE_UPLOAD_PACK;
+        }
+        elseif ($path[1] === 'git-receive-pack')
+        {
+            $request_type = GitClientCommunication::TYPE_RECEIVE_PACK;
+        }
+        else
+        {
+            $this->showDumbHttpPage();
+            return;
+        }
+        
         switch ($method)
         {
             case "FULL_WIKI":
-                $communication = new GitClientCommunication($this->output, $this->request, $this->response, $path);
+                $communication = new GitClientCommunication($this->output, $this->request, $this->response, $path, $request_type);
                 
                 if ($communication->auth() == true) // Verify user, don't do anything on failure (auth() handles that)
                 {
@@ -128,7 +143,3 @@ class SpecialGitAccess extends SpecialPage
     
     
 }
-
-
-
-?>
