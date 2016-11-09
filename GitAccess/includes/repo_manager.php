@@ -59,7 +59,12 @@ class GitRepository
     
     public static function readTreeObject($tree)
     {
-        sscanf($tree, "tree %d\0%s", $length, $raw_entries);
+        sscanf($tree, "tree %d\0", $length);
+        $raw_entries = substr(
+            $tree,
+            strpos($tree, "\0") + 1,
+            $length
+        );
         $raw_bytes = str_split($raw_entries);
         
         $tree_data = array();
@@ -73,17 +78,17 @@ class GitRepository
              */
             if ($raw_bytes[$i] === "\0")
             {
-                if (!isset($end_of_previous_hash))
+                if (!isset($beginning_of_entry))
                 {
                     /* "Rewind" to beginning of string to get type and name.
                      * This relies on a subtle difference between isset() and
                      * empty().
                      */
-                    $end_of_previous_hash = 0;
+                    $beginning_of_entry = 0;
                 }
                 
                 sscanf(
-                    substr($raw_entries, $end_of_previous_hash, $i - $end_of_previous_hash),
+                    substr($raw_entries, $beginning_of_entry, $i - $beginning_of_entry),
                     "%d %s[^\t\n]",
                     $type_id,
                     $filename
@@ -111,12 +116,10 @@ class GitRepository
                 $file_entry = array('type' => $type, 'name' => $filename, 'hash_bin' => $hash_bin, 'hash_hex' => $hash_hex);
                 array_push($tree_data, $file_entry);
                 
-                $i = $i + 20; // Push $i past the hash
+                $i = $i + 21; // Push $i past the hash
+                $beginning_of_entry = $i;
             }
         }
-        
-        unset($end_of_previous_hash); // Just in case
-        
         return $tree_data;
     }
 }
