@@ -19,7 +19,12 @@ class GitRepository
     
     public static function readBlobObject($blob)
     {
-        sscanf($blob, "blob %d\0%s", $length, $data);
+        sscanf($blob, "blob %d\0", $length);
+        $data = substr(
+            $blob,
+            strpos($blob, "\0") + 1,
+            $length
+        );
         return $data;
     }
     
