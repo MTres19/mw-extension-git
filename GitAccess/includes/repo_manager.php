@@ -136,7 +136,7 @@ class GitRepository
         $author_timestamp,
         $author_tzOffset
         $committer_name,
-        $commiter_email,
+        $committer_email,
         $committer_timestamp,
         $committer_tzOffset,
         $message
