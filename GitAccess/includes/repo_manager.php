@@ -11,7 +11,7 @@ class GitRepository
     
     public static function createBlobObject($data)
     {
-        $blob = 'blob ' . strlen($data) . "\0";
+        $blob = 'blob ' . strlen($data) . "\0" . $data;
         $hash_bin = hash('sha1', $blob, true);
         $hash_hex = bin2hex($hash_bin);
         return array('blob' => $blob, 'hash_hex' => $hash_hex, 'hash_bin' => $hash_bin);
