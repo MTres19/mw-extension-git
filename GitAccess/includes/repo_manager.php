@@ -151,8 +151,8 @@ class GitRepository
         $author_tstamp_unix = wfTimestamp(TS_UNIX, $author_timestamp);
         $committer_tstamp_unix = wfTimestamp(TS_UNIX, $committer_timestamp);
         
-        $commit .= "author $author_name <$author_email> $author_tstamp_unix $author_tzOffset";
-        $commit .= "author $committer_name <$committer_email> $committer_tstamp_unix $committer_tzOffset";
+        $commit .= "author $author_name <$author_email> $author_tstamp_unix $author_tzOffset\n";
+        $commit .= "committer $committer_name <$committer_email> $committer_tstamp_unix $committer_tzOffset";
         $commit .= "\n\n";
         $commit .= $message;
         
