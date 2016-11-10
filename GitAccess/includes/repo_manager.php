@@ -42,11 +42,11 @@ class GitRepository
                 case 'EXEC_FILE':
                     $tree .= '100755';
                     break;
-                case 'SYMLINK'
+                case 'SYMLINK':
                     $tree .= '120000';
                     // Not sure where this would be used, but for completeness...
                     break;
-                case 'TREE'
+                case 'TREE':
                     $tree .= '40000';
                     break;
             }
@@ -138,7 +138,7 @@ class GitRepository
         $committer_name,
         $commiter_email,
         $committer_timestamp,
-        $committer_tzOffset
+        $committer_tzOffset,
         $message
     )
     {
