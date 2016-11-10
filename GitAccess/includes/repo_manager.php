@@ -30,7 +30,7 @@ class GitRepository
     
     public static function createTreeObject($tree_data)
     {
-        $tree;
+        $tree = '';
         
         foreach ($tree_data as $entry)
         {
@@ -134,7 +134,7 @@ class GitRepository
         $author_name,
         $author_email,
         $author_timestamp,
-        $author_tzOffset
+        $author_tzOffset,
         $committer_name,
         $committer_email,
         $committer_timestamp,
