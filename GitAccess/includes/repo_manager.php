@@ -165,5 +165,60 @@ class GitRepository
         
         return array('commit' => $commit, 'hash_hex' => $hash_hex, 'hash_bin' => $hash_bin);
     }
+    
+    public static function readCommitObject($commit)
+    {
+        sscanf($commit, "commit %d\0", $length);
+        $raw_data = substr(
+            $commit,
+            strpos($commit, "\0") + 1,
+            $length
+        );
+        sscanf($raw_data, "tree %s\n", $tree);
+        $pieces = explode("\n", $raw_data);
+        
+        $parents = array();
+        $last_parent_piece = null;
+        for ($i = 1; preg_match("~^parent .{40}$~", $pieces[$i]) === 1; ++$i)
+        {
+            sscanf($pieces[$i], "parent %40s", $parents[$i - 1]);
+            $last_parent_piece = $i;
+        }
+        
+        $author_data = array();
+        preg_match(
+            "~^author (.*) <(.*@.*\..*)> ([0-9]*) ([0-9+-]*)$~",
+            $pieces[$last_parent_piece + 1],
+            $author_data
+        );
+        
+        $committer_data = array();
+        preg_match(
+            "~^committer (.*) <(.*@.*\..*)> ([0-9]*) ([0-9+-]*)$~",
+            $pieces[$last_parent_piece + 2],
+            $committer_data
+        );
+        
+        $msg_start = strpos($raw_data, "\n\n") + 2;
+        $message = substr(
+            $raw_data,
+            $msg_start,
+            $length - $msg_start
+        );
+        
+        return array(
+            'tree' => $tree,
+            'parents' => $parents,
+            'author_name' => $author_data[1],
+            'author_email' => $author_data[2],
+            'author_timestamp' => $author_data[3],
+            'author_tzOffset' => $author_data[4],
+            'committer_name' => $committer_data[1],
+            'committer_email' => $committer_data[2],
+            'committer_timestamp' => $committer_data[3],
+            'committer_tzOffset' => $committter_data[4],
+            'message' => $message
+        );
+    }
 }
 
