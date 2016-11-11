@@ -1,11 +1,25 @@
 <?php
+/**
+ * Special page for for GitAccess extension.
+ * 
+ * @file
+ */
 
+/**
+ * This class provides a special page for accessing content
+ * with Git. It provides an information page but delegates
+ * most of the logic and communication to the GitRepository
+ * GitClientCommunication classes.
+ */
 class SpecialGitAccess extends SpecialPage
 {
     protected $output;
     protected $request;
     protected $response;
     
+    /**
+     * Constructor.
+     */
     public function __construct()
     {
         parent::__construct("GitAccess", "gitaccess"); // Sysops only
@@ -35,6 +49,9 @@ class SpecialGitAccess extends SpecialPage
         }
     }
     
+    /**
+     * Shows the information page.
+     */
     public function showInfoPage()
     {
         global $wgCanonicalServer, $wgScriptPath, $wgGitAccessRepoName;
@@ -61,6 +78,14 @@ class SpecialGitAccess extends SpecialPage
         }
     }
     
+    /**
+     * Determines the type of Git request and executes it.
+     * 
+     * @param array $path The subpath passed to execute(),
+     * split by a '/'
+     * @param string $request_service The 'service' parameter
+     * of the query string (if set). Only used for ref discovery.
+     */
     public function executeGitService($path, $request_service)
     {
         global $wgGitAccessRepoName;
@@ -129,6 +154,10 @@ class SpecialGitAccess extends SpecialPage
         }
     }
     
+    /**
+     * Shows an error page when attempting to incorrectly access
+     * the repository
+     */
     public function showDumbHttpPage()
     {
         $this->response->header("HTTP/1.1 400 Bad Request");
@@ -136,9 +165,13 @@ class SpecialGitAccess extends SpecialPage
         $this->output->addWikiText($this->msg("gitaccess-error-dumbhttpaccess"));
     }
     
+    /**
+     * Overloaded function to show that this may perform database
+     * writes.
+     */
     public function doesWrites()
     {
-        return true; // Overload class to show that this may perform database writes
+        return true;
     }
     
     

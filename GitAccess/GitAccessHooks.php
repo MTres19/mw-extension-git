@@ -1,6 +1,22 @@
 <?php
+/**
+ * Hooks for GitAccess extension
+ * 
+ * @file
+ */
+
+/**
+ * Hooks for GitAccess extension
+ */
 class GitAccessHooks
 {
+    /**
+     * Hook to create needed database tables.
+     * 
+     * Run by update.php.
+     * 
+     * @param DatabaseUpdater $dbUpdater The DatabaseUpdater object
+     */
     public static function onLoadExtensionSchemaUpdates($dbUpdater = null)
     {
         if (!$dbUpdater->tableExists('git_hash'))
