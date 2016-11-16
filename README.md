@@ -1,4 +1,10 @@
-# MediaWiki Git Extension
+# GitAccess MediaWiki Extension
+
+Copyright © 2016 Matthew Trescott
+
+With help from paladox, Skizzerz, tgr, and the MediaWiki community. See LICENSE.md for license.
+
+-----
 
 The goal of this project is to implement a special page Special:GitAccess to allow access to the content of a MediaWiki wiki via Git. The primary goals in comparison to [Git-MediaWiki](https://github.com/Git-MediaWiki/Git-MediaWiki/wiki/) are:
 
