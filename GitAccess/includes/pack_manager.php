@@ -31,7 +31,24 @@ class GitPackfile
             }
             else
             {
+                $nibble_1 = substr(
+                    dechex(($object['type'] << 4) | 128),
+                    0,
+                    1
+                );
+                $pack .= $nibble_1;
                 
+                $len = strlen($object['data']) << 4;
+                $numSeptets = 0;
+                while ($len > 0)
+                {
+                    $len = $len >> 7;
+                    ++$numSeptets;
+                }
+                
+                for ($i; $i <= $numSeptets; ++$i)
+                {
+                }
             }
         }
     }
