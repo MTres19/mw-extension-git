@@ -74,6 +74,13 @@ class GitPackfile
             }
             
             ksort($octets);
+            
+            foreach($octets as $octet)
+            {
+                $pack .= pack('C', $octet);
+            }
+            
+            $pack .= $object['data'];
         }
     }
     
