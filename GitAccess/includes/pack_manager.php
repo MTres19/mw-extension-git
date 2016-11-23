@@ -82,6 +82,9 @@ class GitPackfile
             
             $pack .= $object['data'];
         }
+        
+        $pack .= $hash('sha1', $pack, true);
+        return $pack;
     }
     
     public static function importPack($pack, $index)
