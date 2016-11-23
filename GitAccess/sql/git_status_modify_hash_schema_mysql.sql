@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS /*_*/git_status_modify_hash(
     -- Foreign key to commit_hash in the git_hash table. This assigns an action
     -- like a page move to a commit, in case it is part of a single commit that
     -- includes other modifications.
-    commit_hash VARCHAR(40) NOT NULL,
+    commit_hash VARBINARY(40) NOT NULL,
     
     -- Foreign key to log_id in MediaWiki's logging table. From this key GitAccess
     -- can infer all the information it needs about the change itself.
