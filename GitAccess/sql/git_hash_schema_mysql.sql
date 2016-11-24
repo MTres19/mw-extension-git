@@ -20,9 +20,11 @@ CREATE TABLE IF NOT EXISTS /*_*/git_hash(
     -- change the hashes). Also necessary for edits made via pull requests.
     author_name VARBINARY(255),
     author_email VARBINARY(255),
+    author_tzOffset VARBINARY(5),
     
     -- With rebases sometimes you have different authors and committers. This
     -- has to be stored somehow to keep the "real" Git repository in sync.
     committer_name VARBINARY(255),
-    committer_email VARBINARY(255)
+    committer_email VARBINARY(255),
+    committer_tzOffset VARBINARY(5)
 ) /*$wgDBTableOptions*/;
