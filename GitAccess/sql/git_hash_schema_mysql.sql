@@ -20,13 +20,16 @@ CREATE TABLE IF NOT EXISTS /*_*/git_hash(
     -- change the hashes). Also necessary for edits made via pull requests.
     author_name VARBINARY(255),
     author_email VARBINARY(255),
-    author_timestamp VARBINARY(14),
-    author_tzOffset VARBINARY(5),
+    
+    -- Timestamps need to be easily fetched for commits without looking up log
+    -- entries or revisions. Unix time format.
+    author_timestamp INTEGER,
+    author_tzOffset INTEGER,
     
     -- With rebases sometimes you have different authors and committers. This
     -- has to be stored somehow to keep the "real" Git repository in sync.
     committer_name VARBINARY(255),
     committer_email VARBINARY(255),
-    committer_timestamp VARBINARY(14),
-    committer_tzOffset VARBINARY(5)
+    committer_timestamp INTEGER,
+    committer_tzOffset INTEGER
 ) /*$wgDBTableOptions*/;
