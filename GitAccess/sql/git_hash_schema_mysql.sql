@@ -26,5 +26,6 @@ CREATE TABLE IF NOT EXISTS /*_*/git_hash(
     -- has to be stored somehow to keep the "real" Git repository in sync.
     committer_name VARBINARY(255),
     committer_email VARBINARY(255),
+    committer_timestamp VARBINARY(14),
     committer_tzOffset VARBINARY(5)
 ) /*$wgDBTableOptions*/;
