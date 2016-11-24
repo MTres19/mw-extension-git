@@ -19,11 +19,105 @@
  
 class GitRepository
 {
+    public $blobs;
+    public $trees;
+    public $commits;
+    public $tags;
     private $dbw;
     
     public function __construct(&$dbw)
     {
         $this->dbw = $dbw;
+        $this->blobs => array();
+        $this->trees => array();
+        $this->commits => array();
+        $this->tags => array();
+    }
+    
+    public function populateFromJournal()
+    {
+        $result = $this->dbw->select('git_hash', '*', null);
+        $hashes = array();
+        do
+        {
+            $row = $result->fetchRow();
+            if ($row)
+            {
+                $hashes[$row['commit_hash']] = array(
+                    'commit_hash_parents' => explode(',', $row['commit_hash_parents']),
+                    'author_name' => $row['author_name'],
+                    'author_email' => $row['author_email'],
+                    'author_timestamp' => $row['author_timestamp'],
+                    'author_tzOffset' => $row['author_tzOffset'],
+                    'committer_name' => $row['committer_name'],
+                    'committer_email' => $row['committer_email'],
+                    'committer_timestamp' => $row['committer_timestamp'],
+                    'committer_tzOffset' => $row['committer_tzOffset']
+                );
+            }
+        }
+        while ($row);
+        
+        foreach ($hashes as $hash => &$hash_data)
+        {
+            $timestamp = wfTimestamp(
+                TS_MW,
+                $hash_data['committer_timestamp'] + $hash_data['committer_tzOffset']
+            );
+            /*// -----------------------------------------------
+            // Process objects  for revisions
+            $affected_rev_ids = $this->dbw->select(
+                'git_edit_hash',
+                'affected_rev_id',
+                array('commit_hash' => $hash)
+            );
+            
+            $rev_ids = array();
+            do
+            {
+                $row = $affected_rev_ids->fetchRow()
+                if ($row)
+                {
+                    array_push($rev_ids, $row['affected_rev_id']);
+                }
+            }
+            while ($row);
+            $this->loadFromRevisions($rev_ids, $hash_data);
+            
+            // ------------------------------------------------
+            // Process objects for status modifications
+            $linked_log_ids = $this->dbw->select(
+                'git_status_modify_hash',
+                'log_id',
+                array('commit_hash' => $hash)
+            );
+            
+            $log_ids = array();
+            do
+            {
+                $row = $linked_log_ids->fetchRow();
+                if ($row)
+                {
+                    array_push($log_ids, $row['log_id']);
+                }
+            }
+            while ($row);
+            $this->loadFromLogging($log_ids, $hash_data);*/
+        }
+    }
+    
+    public function loadFromRevisions($rev_ids, &$hash_data)
+    {
+        foreach ($rev_ids as $rev_id)
+        {
+            $revision = Revision::newFromId($rev_id);
+            $text = ContentHandler::getContentText($revision->getContent(Revision::RAW));
+        }
+    }
+    
+    public function loadFromLogging($log_ids, &$hash_data)
+    {
+        
     }
     
     public static function createBlobObject($data)
