@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS /*_*/git_hash(
     -- change the hashes). Also necessary for edits made via pull requests.
     author_name VARBINARY(255),
     author_email VARBINARY(255),
+    author_timestamp VARBINARY(14),
     author_tzOffset VARBINARY(5),
     
     -- With rebases sometimes you have different authors and committers. This
