@@ -61,6 +61,14 @@ class GitAccessHooks
             );
         }
         
+        if (!$dbUpdater->tableExists('git_tag'))
+        {
+            $dbUpdater->addExtensionTable(
+                'git_tag',
+                dirname(__FILE__) . '/sql/git_tag_schema_mysql.sql'
+            );
+        }
+        
         return true;
     }
 }       
