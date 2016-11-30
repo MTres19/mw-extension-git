@@ -18,5 +18,5 @@ CREATE TABLE IF NOT EXISTS /*_*/git_edit_hash(
     -- key as that would prevent pages being moved to the archive table.
     -- The page ID can be found from the revision table.
     affected_rev_id INTEGER
-) /*$wgDBTableOptions*/;
+)/*$wgDBTableOptions*/;
     

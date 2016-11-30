@@ -32,4 +32,4 @@ CREATE TABLE IF NOT EXISTS /*_*/git_hash(
     committer_email VARBINARY(255),
     committer_timestamp INTEGER,
     committer_tzOffset INTEGER
-) /*$wgDBTableOptions*/;
+)/*$wgDBTableOptions*/;

@@ -19,5 +19,5 @@ CREATE TABLE IF NOT EXISTS /*_*/git_edit_hash(
     -- The page ID can be found from the revision table.
     affected_rev_id INTEGER,
     FOREIGN KEY (commit_hash) REFERENCES git_hash(commit_hash)
-) /*$wgDBTableOptions*/;
+)/*$wgDBTableOptions*/;
     
