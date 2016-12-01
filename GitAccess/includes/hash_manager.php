@@ -36,6 +36,7 @@ class GitCommit
     public $linked_log_ids;
     
     public $root_tree;
+    public $root_tree_hash;
     
     protected $dbw;
     
@@ -128,58 +129,35 @@ class GitCommit
     
     public static function newFromData($commit)
     {
-        sscanf($commit, "commit %d\0", $length);
-        $raw_data = substr(
+        $commit_data = array();
+        preg_match(
+            "commit (.[0-9]*)\\0tree (.{40})\\n((?:parent .{40}\\n)+)author (.*) <(.*@.*\..*)> ([0-9]*) ([0-9+-]*)\\ncommitter (.*) <(.*@.*\..*)> ([0-9]*) ([0-9+-]*)\\n\\n(.*)",
             $commit,
-            strpos($commit, "\0") + 1,
-            $length
+            $commit_data
         );
-        sscanf($raw_data, "tree %s\n", $tree);
-        $pieces = explode("\n", $raw_data);
         
         $parents = array();
-        $last_parent_piece = null;
-        for ($i = 1; preg_match("~^parent .{40}$~", $pieces[$i]) === 1; ++$i)
+        $parent_pieces = explode("\n", $commit_data[2]);
+        foreach($parent_pieces as $parent_piece)
         {
-            sscanf($pieces[$i], "parent %40s", $parents[$i - 1]);
-            $last_parent_piece = $i;
+            array_push($parents, sscanf($parent_piece, "parent %s")[0]);
         }
-        
-        $author_data = array();
-        preg_match(
-            "~^author (.*) <(.*@.*\..*)> ([0-9]*) ([0-9+-]*)$~",
-            $pieces[$last_parent_piece + 1],
-            $author_data
-        );
-        
-        $committer_data = array();
-        preg_match(
-            "~^committer (.*) <(.*@.*\..*)> ([0-9]*) ([0-9+-]*)$~",
-            $pieces[$last_parent_piece + 2],
-            $committer_data
-        );
-        
-        $msg_start = strpos($raw_data, "\n\n") + 2;
-        $message = substr(
-            $raw_data,
-            $msg_start,
-            $length - $msg_start
-        );
         
         $hash = hash('sha1', $commit);
         
         $instance = new self();
         $instance->commit_hash = $hash;
         $instance->parent_hashes = $parents;
-        $instance->author_name = $author_data[1];
-        $instance->author_email = $author_data[2];
-        $instance->author_timestamp = $author_data[3];
-        $instance->author_tzOffset = self::tzOffsetToUnix($author_data[4]);
-        $instance->committer_name = $committer_data[1];
-        $instance->committer_email = $committer_data[2];
-        $instance->committer_timestamp = $committer_data[3];
-        $instance->committer_tzOffset = self::tzOffsetToUnix($committer_data[4]);
-        $instance->commit_message = $message;
+        $instance->author_name = $commit_data[3];
+        $instance->author_email = $commit_data[4];
+        $instance->author_timestamp = $commit_data[5];
+        $instance->author_tzOffset = self::tzOffsetToUnix($commit_data[6]);
+        $instance->committer_name = $commit_data[7];
+        $instance->committer_email = $commit_data[8];
+        $instance->committer_timestamp = $commit_data[9];
+        $instance->committer_tzOffset = self::tzOffsetToUnix($commit_data[10]);
+        $instance->commit_message = $commit_data[11];
+        $instance->root_tree_hash = $commit_data[1];
         
         return $instance;
     }
