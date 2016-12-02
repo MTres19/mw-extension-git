@@ -39,10 +39,11 @@ class GitCommit
     public $root_tree_hash;
     
     protected $dbw;
+    protected $repo;
     
-    public function __construct($hash)
+    public function __construct(&$repo)
     {
-        $this->commit_hash = $hash;
+        $this->repo = &$repo;
         $this->dbw = wfGetDB(DB_MASTER);
     }
     
@@ -127,7 +128,7 @@ class GitCommit
         return $commit;
     }
     
-    public static function newFromData($commit)
+    public static function newFromData($commit, &$repo)
     {
         $commit_data = array();
         preg_match(
@@ -145,7 +146,7 @@ class GitCommit
         
         $hash = hash('sha1', $commit);
         
-        $instance = new self();
+        $instance = new self($repo);
         $instance->commit_hash = $hash;
         $instance->parent_hashes = $parents;
         $instance->author_name = $commit_data[3];
@@ -162,9 +163,9 @@ class GitCommit
         return $instance;
     }
     
-    public static function newFromHashJournal($hash)
+    public static function newFromHashJournal($hash, &$repo)
     {
-        $instance = new self();
+        $instance = new self($repo);
         $row = $instance->dbw->selectRow(
             'git_hash',
             array(

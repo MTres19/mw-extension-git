@@ -43,7 +43,7 @@ class GitRepository
             $row = $result->fetchRow();
             if ($row)
             {
-                $this->commits[$row['commit_hash']] = GitCommit::newFromHashJournal($row['commit_hash']);
+                $this->commits[$row['commit_hash']] = GitCommit::newFromHashJournal($row['commit_hash'], $this);
             }
         }
         while ($row);
