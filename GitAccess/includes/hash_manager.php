@@ -132,7 +132,7 @@ class GitCommit
     {
         $commit_data = array();
         preg_match(
-            "commit (.[0-9]*)\\0tree (.{40})\\n((?:parent .{40}\\n)+)author (.*) <(.*@.*\..*)> ([0-9]*) ([0-9+-]*)\\ncommitter (.*) <(.*@.*\..*)> ([0-9]*) ([0-9+-]*)\\n\\n(.*)",
+            "commit (.[0-9]*)\\0tree (.{40})\\n((?:parent .{40}\\n)*)author (.*) <(.*@.*\..*)> ([0-9]*) ([0-9+-]*)\\ncommitter (.*) <(.*@.*\..*)> ([0-9]*) ([0-9+-]*)\\n\\n(.*)",
             $commit,
             $commit_data
         );
