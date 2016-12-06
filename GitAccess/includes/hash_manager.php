@@ -37,6 +37,7 @@ class GitCommit
     
     public $root_tree;
     public $root_tree_hash;
+    public $is_head;
     
     protected $dbw;
     protected $repo;
@@ -192,8 +193,14 @@ class GitCommit
         $instance->committer_email = $row->committer_email;
         $instance->committer_timestamp = $row->committer_timestamp;
         $instance->committer_tzOffset = $row->committer_tzOffset;
+        $instance->is_head = (boolean)$row->is_head;
         
         return $instance;
+    }
+    
+    public static function newFromRevId($id, &$repo)
+    {
+        
     }
     
     public static function tzOffsetToUnix($tzOffset)

@@ -31,5 +31,10 @@ CREATE TABLE IF NOT EXISTS /*_*/git_hash(
     committer_name VARBINARY(255),
     committer_email VARBINARY(255),
     committer_timestamp INTEGER,
-    committer_tzOffset INTEGER
+    committer_tzOffset INTEGER,
+    
+    -- Git never walks forward in a commit history, because it's very difficult
+    -- to find child commits. By storing the HEAD commit, it's simple to walk
+    -- backward through the parents.
+    is_head BOOLEAN
 )/*$wgDBTableOptions*/;

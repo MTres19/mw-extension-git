@@ -23,6 +23,10 @@ class GitRepository
     public $trees;
     public $commits;
     public $tags;
+    public $HEAD;
+    public $HEAD_log_id;
+    public $HEAD_rev_id;
+    
     private $dbw;
     
     public function __construct(&$dbw)
@@ -34,10 +38,183 @@ class GitRepository
         $this->tags => array();
     }
     
+    public function getHead()
+    {
+        if (!$this->commits)
+        {
+            $this->HEAD = null;
+        }
+        
+        else
+        {
+            foreach ($commits as $commit)
+            {
+                if ($commit->is_head)
+                {
+                    $this->HEAD = $commit->commit_hash;
+                }
+            }
+        }
+    }
+    
+    public function setHeadRevId()
+    {
+        /* For each parent commit, check if there are any revision IDs.
+         * If there are in the first level of parents, save them and exit the loop.
+         * Otherwise, make a new array of commits to try from the parents of the others
+         * and run the loop again.
+         */
+        $currentCommitParents = array($this->HEAD);
+        while ($currentCommitParents)
+        {
+            $revIds = array();
+            foreach ($currentCommitParents as $currentCommitParent)
+            {
+                if ($this->commits[$currentCommitParent]->linked_rev_ids)
+                {
+                    $revIds = array_merge($revIds, $this->commits[$currentCommitParent]->linked_rev_ids);
+                }
+            }
+            
+            if ($revIds)
+            {
+                // Save the biggest rev_id and exit the do-while loop
+                $this->HEAD_rev_id = max($revIds);
+                break;
+            }
+            
+            else
+            {
+                // Generate a new set of parent hashes to check
+                $newCommitParents = array();
+                foreach ($currentCommitParents as $currentCommitParent)
+                {
+                    $newCommitParents = array_merge(
+                        $newCommitParents,
+                        $this->commits[$currentCommitParent]->parent_hashes
+                    );
+                }
+                
+                $currentCommitParents = $newCommitParents;
+            }
+        }
+        
+        /* If no revisions could be found in this object, then the oldest
+         * revision not in this object or the journal must be revision 1.
+         * Since revision 1 should be included in database queries, set
+         * the HEAD revision to 0.
+         */
+        if (!$this->HEAD_rev_id)
+        {
+            $this->HEAD_rev_id = 0;
+        }
+    }
+    
+    // See comments in setHeadRevId() for how this works
+    public function setHeadLogId()
+    {
+        $currentCommitParents = array($this->HEAD);
+        while ($currentCommitParents)
+        {
+            $logIds = array();
+            foreach ($currentCommitParents as $currentCommitParent)
+            {
+                if ($this->commits[$currentCommitParent]->linked_log_ids)
+                {
+                    $logIds = array_merge($logIds, $this->commits[$currentCommitParent]->linked_log_ids);
+                }
+            }
+            
+            if ($logIds)
+            {
+                $this->HEAD_log_id = max($logIds);
+                break;
+            }
+            
+            else
+            {
+                // Generate a new set of parent hashes to check
+                $newCommitParents = array();
+                foreach ($currentCommitParents as $currentCommitParent)
+                {
+                    $newCommitParents = array_merge(
+                        $newCommitParents,
+                        $this->commits[$currentCommitParent]->parent_hashes
+                    );
+                }
+                
+                $currentCommitParents = $newCommitParents;
+            }
+        }
+        
+        /* If no log entries could be found in this object, then the oldest
+         * log entry not in this object or the journal must be entry 1.
+         * Since entry 1 should be included in database queries, set
+         * the HEAD log entry to 0.
+         */
+        if (!$this->HEAD_log_id)
+        {
+            $this->HEAD_log_id = 0;
+        }
+    }
+    
+    // WARNING: populateFromJournal() MUST have been called already
+    // NOTE: This function also takes care of populating this object.
+    // You do not need to call populateFromJournal() again.
+    public function populateJournalFromHistory()
+    {
+        $this->getHead();
+        $this->setHeadRevId();
+        $this->setHeadLogId();
+        
+        $sql = $this->dbw->selectSQLText(
+            'revision',
+            array(
+                'rev_id' => 'rev_id',
+                'log_id' => 'NULL',
+                'action_timestamp' => 'rev_timestamp'
+            ),
+            'rev_id > ' . $this->HEAD_rev_id
+        );
+        $sql .= ' UNION ';
+        $sql .= $this->dbw->selectSQLText(
+            'logging',
+            array(
+                'log_id' => 'log_id',
+                'rev_id' => 'NULL',
+                'action_timestamp' => 'log_timestamp'
+            ),
+            'log_id > ' . $this->HEAD_log_id,
+            __METHOD__,
+            array(
+                'ORDER BY' => array(
+                    'action_timestamp ASC',
+                    'log_id ASC',
+                    'rev_id ASC'
+                )
+            )
+        );
+        
+        $result = $this->dbw->query($sql);
+        
+        $previous_log_id = $this->HEAD_log_id;
+        $previous_rev_id = $this->HEAD_rev_id;
+        do
+        {
+            $row = $result->fetchRow();
+            if ($row)
+            {
+                $commit = $row['rev_id'] ? GitCommit::newFromRevId($row['rev_id'], $this) : GitCommit::newFromLogId($row['log_id'], $this);
+                $commit->addToRepo();
+                $commit->journalize();
+            }
+        }
+        while ($row);
+    }
+    
     public function populateFromJournal()
     {
         $result = $this->dbw->select('git_hash', 'commit_hash');
-        $hashes = array();
         do
         {
             $row = $result->fetchRow();
@@ -66,106 +243,6 @@ class GitRepository
             $length
         );
         return $data;
-    }
-    
-    public static function createTreeObject($tree_data)
-    {
-        $tree = '';
-        
-        foreach ($tree_data as $entry)
-        {
-            switch ($entry['type'])
-            {
-                case 'NORMAL_FILE':
-                    $tree .= '100644';
-                    break;
-                case 'EXEC_FILE':
-                    $tree .= '100755';
-                    break;
-                case 'SYMLINK':
-                    $tree .= '120000';
-                    // Not sure where this would be used, but for completeness...
-                    break;
-                case 'TREE':
-                    $tree .= '40000';
-                    break;
-            }
-            
-            $tree = $tree . ' ' . $entry['name'] . "\0" . $entry['hash_bin'];
-        }
-        
-        $length = strlen($tree);
-        $tree = 'tree ' . $length . "\0" . $tree;
-        $hash_bin = hash('sha1', $tree, true);
-        $hash_hex = bin2hex($hash_bin);
-        
-        return array('tree' => $tree, 'hash_hex' => $hash_hex, 'hash_bin' => $hash_bin);
-    }
-    
-    public static function readTreeObject($tree)
-    {
-        sscanf($tree, "tree %d\0", $length);
-        $raw_entries = substr(
-            $tree,
-            strpos($tree, "\0") + 1,
-            $length
-        );
-        $raw_bytes = str_split($raw_entries);
-        
-        $tree_data = array();
-        
-        for ($i = 0; isset($raw_entries[$i]); ++$i)
-        {
-            /* Either the null is marking the beginning of the hash,
-             * or it is part of the hash itself. However, the latter
-             * case should not appear, since $i will be pushed past
-             * the hash automatically upon encountering any NUL char.
-             */
-            if ($raw_bytes[$i] === "\0")
-            {
-                if (!isset($beginning_of_entry))
-                {
-                    /* "Rewind" to beginning of string to get type and name.
-                     * This relies on a subtle difference between isset() and
-                     * empty().
-                     */
-                    $beginning_of_entry = 0;
-                }
-                
-                sscanf(
-                    substr($raw_entries, $beginning_of_entry, $i - $beginning_of_entry),
-                    "%d %s[^\t\n]",
-                    $type_id,
-                    $filename
-                );
-                
-                switch ($type_id)
-                {
-                    case 100644:
-                        $type = 'NORMAL_FILE';
-                        break;
-                    case 100755:
-                        $type = 'EXEC_FILE';
-                        break;
-                    case 120000:
-                        $type = 'SYMLINK';
-                        break;
-                    case 40000:
-                        $type = 'TREE';
-                        break;
-                }
-                
-                $hash_bin = substr($raw_entries, $i + 1, 20);
-                $hash_hex = bin2hex($hash_bin);
-                
-                $file_entry = array('type' => $type, 'name' => $filename, 'hash_bin' => $hash_bin, 'hash_hex' => $hash_hex);
-                array_push($tree_data, $file_entry);
-                
-                $i = $i + 21; // Push $i past the hash
-                $beginning_of_entry = $i;
-            }
-        }
-        return $tree_data;
     }
 }
 
