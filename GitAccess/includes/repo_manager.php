@@ -178,6 +178,16 @@ class GitRepository
         );
         $sql .= ' UNION ';
         $sql .= $this->dbw->selectSQLText(
+            'archive',
+            array(
+                'rev_id' => 'ar_rev_id',
+                'log_id' => 'NULL',
+                'action_timestamp' => 'rev_timestamp'
+            ),
+            'ar_rev_id > ' . $this->HEAD_rev_id
+        );
+        $sql .= ' UNION ';
+        $sql .= $this->dbw->selectSQLText(
             'logging',
             array(
                 'log_id' => 'log_id',
