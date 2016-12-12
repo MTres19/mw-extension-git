@@ -22,6 +22,7 @@ class GitTree
     public $tree_data;
     
     protected $repo;
+    protected $dbw;
     
     const T_NORMAL_FILE = '100644';
     const T_EXEC_FILE = '100755';
@@ -31,6 +32,7 @@ class GitTree
     public function __construct(&$repo)
     {
         $this->repo = &$repo;
+        $this->dbw = wfGetDB(DB_MASTER);
     }
     
     public function addToRepo()
@@ -128,5 +130,22 @@ class GitTree
     {
         $instance = new self($repo);
         $instance->tree_data = self::parse($data);
+    }
+    
+    public static function newRoot($rev_id, $log_id, &$repo)
+    {
+        $instance = new self($repo);
+        $namespaces = array_diff(MWNamespace::getCanonicalNamespaces(), $GLOBALS['wgGitAccessNSBlacklist']);
+        foreach ($namespaces as $id => $name)
+        {
+            if ($id >= 0)
+            {
+                
+            }
+        }
+        
+        // ...
+        
+        return $instance;
     }
 }

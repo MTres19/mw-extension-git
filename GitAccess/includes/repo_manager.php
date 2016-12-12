@@ -190,11 +190,11 @@ class GitRepository
         $sql .= $this->dbw->selectSQLText(
             'logging',
             array(
-                'log_id' => 'log_id',
                 'rev_id' => 'NULL',
+                'log_id' => 'log_id',
                 'action_timestamp' => 'log_timestamp'
             ),
-            'log_id > ' . $this->HEAD_log_id,
+            'log_id > ' . $this->HEAD_log_id . 'AND (log_type = \'delete\' OR log_type = \'move\' OR log_type = \'upload\')',
             __METHOD__,
             array(
                 'ORDER BY' => array(
@@ -207,6 +207,10 @@ class GitRepository
         
         $result = $this->dbw->query($sql);
         
+        /* In order to generate a tree and commit, the GitTree class
+         * needs to know the most current (relevant) log id at the time
+         * of the revision. (Or vice versa)
+         */
         $previous_log_id = $this->HEAD_log_id;
         $previous_rev_id = $this->HEAD_rev_id;
         do
@@ -214,9 +218,30 @@ class GitRepository
             $row = $result->fetchRow();
             if ($row)
             {
-                $commit = $row['rev_id'] ? GitCommit::newFromRevId($row['rev_id'], $this) : GitCommit::newFromLogId($row['log_id'], $this);
+                if ($row['rev_id'])
+                {
+                    $previous_rev_id = $row['rev_id'];
+                    $commit = GitCommit::newFromRevId($row['rev_id'], $previous_log_id, $this);
+                }
+                elseif ($row['log_id'])
+                {
+                    $previous_log_id = $row['log_id'];
+                    $commit = GitCommit::newFromLogId($row['log_id'], $previous_rev_id, $this);
+                }
+                
                 $commit->addToRepo();
                 $commit->journalize();
+            }
+            
+            else
+            {
+                // Since the top revision and log entry have been reached, HEAD can move forward.
+                $this->commits[$this->HEAD]->is_head = false;
+                $commit->is_head = true; // FYI $commit is the last commit made in the if statement above.
+                $commit->journalize();
+                
+                $this->setHeadLogId();
+                $this->setHeadRevId();
             }
         }
         while ($row);

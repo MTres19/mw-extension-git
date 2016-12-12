@@ -198,9 +198,61 @@ class GitCommit
         return $instance;
     }
     
-    public static function newFromRevId($id, &$repo)
+    public static function newFromRevId($id, $previous_log_id &$repo)
     {
+        $instance = new self($repo);
         
+        $sql = $this->dbw-selectSQLText(
+            'revision',
+            array(
+                'ar_id' => 'NULL',
+                'rev_id' => 'rev_id'
+            ),
+            'rev_id = ' . $id
+        );
+        $sql .= ' UNION ';
+        $sql .= $this->dbw->selectSQLText(
+            'archive',
+            array(
+                'ar_id' => 'ar_id',
+                'rev_id' => 'ar_rev_id'
+            ),
+            'ar_rev_id = ' . $id
+        );
+        $row = $this->dbw->query($sql)->fetchObject();
+        
+        $revision = $row->ar_id
+                        ? Revision::newFromArchiveRow(
+                            $this->dbw->selectRow(
+                                'archive',
+                                '*',
+                                'ar_rev_id = ' . $id
+                            )
+                            )
+                        : Revision::newFromId($id);
+        
+        $instance->linked_rev_ids = array($id);
+        
+        $instance->commit_message = $revision->getComment(Revision::RAW);
+        if ($revision->isMinor())
+        {
+            $instance->commit_message = '[Minor] ' . $instance->commit_message;
+        }
+        
+        $user = User::newFromId($revision->getUser(Revision::RAW));
+        
+        $instance->author_name = $user->getRealName() ?: $user->getName();
+        $instance->author_email = $user->getEmail() ?: $user->getName() . '@' . $GLOBALS['wgServerName'];
+        $instance->author_timestamp = wfTimestamp(TS_UNIX, $revision->getTimestamp());
+        $instance->author_tzOffset = self::tzOffsetMwToUnix($user->getOption('timecorrection', $GLOBALS['wgLocalTZoffset'], true));
+        $instance->committer_name = $user->getRealName() ?: $user->getName();
+        $instance->committer_email = $user->getEmail() ?: $user->getName() . '@' . $GLOBALS['wgServerName'];
+        $instance->committer_timestamp = wfTimestamp(TS_UNIX, $revision->getTimestamp());
+        $instance->committer_tzOffset = self::tzOffsetMwToUnix($user->getOption('timecorrection', $GLOBALS['wgLocalTZoffset'], true));
+        
+        $instance->root_tree = GitTree::newRoot($id, $previous_log_id, $repo);
+        
+        return $instance;
     }
     
     public static function tzOffsetToUnix($tzOffset)
@@ -216,6 +268,12 @@ class GitCommit
         }
         
         return ($minutes * 60) + ($hours * 3600);
+    }
+    
+    public static function tzOffsetMwToUnix($tzOffset)
+    {
+        preg_match("~^(.+)\\|(.+)$~", $tzOffset, $info);
+        return isset($info[2]) ? $info[2] * 60 : $tzOffset * 60;
     }
     
     public static function tzOffsetToHrsMins($tzOffset)
