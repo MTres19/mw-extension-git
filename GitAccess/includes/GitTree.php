@@ -24,10 +24,10 @@ class GitTree
     protected $repo;
     protected $dbw;
     
-    const T_NORMAL_FILE = '100644';
-    const T_EXEC_FILE = '100755';
-    const T_SYMLINK = '120000';
-    const T_TREE = '40000';
+    const T_NORMAL_FILE = 100644;
+    const T_EXEC_FILE = 100755;
+    const T_SYMLINK = 120000;
+    const T_TREE = 40000;
     
     public function __construct(&$repo)
     {
@@ -97,26 +97,10 @@ class GitTree
                     $filename
                 );
                 
-                switch ($type_id)
-                {
-                    case 100644:
-                        $type = 'NORMAL_FILE';
-                        break;
-                    case 100755:
-                        $type = 'EXEC_FILE';
-                        break;
-                    case 120000:
-                        $type = 'SYMLINK';
-                        break;
-                    case 40000:
-                        $type = 'TREE';
-                        break;
-                }
-                
                 $hash_bin = substr($raw_entries, $i + 1, 20);
                 $hash_hex = bin2hex($hash_bin);
                 
-                $file_entry = array('type' => $type, 'name' => $filename, 'hash_bin' => $hash_bin, 'hash_hex' => $hash_hex);
+                $file_entry = array('type' => $type_id, 'name' => $filename, 'hash' => $hash_hex);
                 array_push($tree_data, $file_entry);
                 
                 $i = $i + 21; // Push $i past the hash
