@@ -237,6 +237,7 @@ class GitRepository
             {
                 // Since the top revision and log entry have been reached, HEAD can move forward.
                 $this->commits[$this->HEAD]->is_head = false;
+                $this->commits[$this->HEAD]->journalize();
                 $commit->is_head = true; // FYI $commit is the last commit made in the if statement above.
                 $commit->journalize();
                 
