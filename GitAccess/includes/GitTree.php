@@ -132,4 +132,37 @@ class GitTree
         
         return $instance;
     }
+    
+    public static function newFromNamespace($rev_id, $log_id, $ns_id, &$repo)
+    {
+        
+    }
+    
+    public static function getPageNameAtRevision(Revision $revision)
+    {
+        $dbw = wfGetDB(DB_MASTER);
+        $result = $dbw->select(
+            'logging',
+            [ 'log_id' => 'MAX(log_id)' ],
+            array(
+                'log_page' => $revision->getPage(),
+                'log_action' => 'move',
+                'log_timestamp <= ' . $revision->getTimestamp()
+            )
+        );
+        if ($result->numRows())
+        {
+            return DatabaseLogEntry::newFromRow(
+                $dbw->selectRow(
+                    'logging',
+                    '*',
+                    'log_id=' . $result->fetchObject()->log_id
+                )
+            )->getParameters()['4::target'];
+        }
+        else
+        {
+            return Title::newFromID($revision->getPage())->getText();
+        }
+    }
 }

@@ -129,6 +129,16 @@ class GitCommit
         return $commit;
     }
     
+    public function getHash()
+    {
+        return hash('sha1', $this->export());
+    }
+    
+    public function addToRepo()
+    {
+        $this->repo->commits[$this->getHash()] = $this;
+    }
+    
     public static function newFromData($commit, &$repo)
     {
         $commit_data = array();
