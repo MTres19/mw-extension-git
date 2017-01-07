@@ -138,7 +138,7 @@ class GitTree
         
     }
     
-    public static function getPageNameAtRevision(Revision $revision)
+    public static function getTitleAtRevision(Revision $revision)
     {
         $dbw = wfGetDB(DB_MASTER);
         $result = $dbw->select(
@@ -152,17 +152,19 @@ class GitTree
         );
         if ($result->numRows())
         {
-            return DatabaseLogEntry::newFromRow(
+            $titleText = DatabaseLogEntry::newFromRow(
                 $dbw->selectRow(
                     'logging',
                     '*',
                     'log_id=' . $result->fetchObject()->log_id
                 )
             )->getParameters()['4::target'];
+            
+            return MediaWikiServices::getInstance()->getTitleParser()->parseTitle($titleText, NS_MAIN);
         }
         else
         {
-            return Title::newFromID($revision->getPage())->getText();
+            return new TitleValue($revision->getTitle()->getNamespace(), $revision->getTitle()->getDBKey());
         }
     }
 }
