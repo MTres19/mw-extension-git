@@ -138,25 +138,30 @@ class GitTree
         
     }
     
-    public static function getTitleAtRevision(Revision $revision)
+    public static function getTitleAtRevision(Revision $revision, $log_id = null)
     {
         $dbw = wfGetDB(DB_MASTER);
-        $result = $dbw->select(
-            'logging',
-            [ 'log_id' => 'MAX(log_id)' ],
-            array(
-                'log_page' => $revision->getPage(),
-                'log_action' => 'move',
-                'log_timestamp <= ' . $revision->getTimestamp()
-            )
+        $conds = array(
+            'log_page' => $revision->getPage(),
+            'log_action' => 'move',
+            'log_timestamp <= ' . $revision->getTimestamp(),
         );
-        if ($result->numRows())
+        if ($log_id) array_push($conds, 'log_id <= ' . $log_id);
+        
+        $result = $dbw->selectRow(
+            'logging',
+            array(
+                'log_id' => 'MAX(log_id)'
+            ),
+            $conds
+        );
+        if ($result)
         {
             $titleText = DatabaseLogEntry::newFromRow(
                 $dbw->selectRow(
                     'logging',
                     '*',
-                    'log_id=' . $result->fetchObject()->log_id
+                    'log_id=' . $result->log_id
                 )
             )->getParameters()['4::target'];
             
