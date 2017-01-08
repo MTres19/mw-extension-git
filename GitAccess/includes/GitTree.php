@@ -155,7 +155,7 @@ class GitTree
             ),
             $conds
         );
-        if ($result)
+        if ($result->log_id)
         {
             $titleText = DatabaseLogEntry::newFromRow(
                 $dbw->selectRow(
