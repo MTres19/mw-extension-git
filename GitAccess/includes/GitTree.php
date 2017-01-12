@@ -135,7 +135,46 @@ class GitTree
     
     public static function newFromNamespace($rev_id, $log_id, $ns_id, &$repo)
     {
+        $sql = $this->dbw->selectSQLText(
+            array('page', 'revision'),
+            array(
+                'is_archive' => '\'false\'',
+                'page.page_id',
+                'page.page_namespace',
+                'rev_id' => 'MAX(revision.rev_id)'
+            ),
+            array(
+                'rev_id <= ' . $rev_id,
+                'page_namespace' => $ns_id
+            ),
+            __METHOD__,
+            array(
+                'GROUP BY' => array('\'false\'', 'page_id', 'page_namespace')
+            ),
+            array(
+                'revision' => array('INNER JOIN', 'page_id = rev_page')
+            )
+        );
+        $sql .= ' UNION ';
+        $sql .= $this->dbw->selectSQLText(
+            'archive',
+            array(
+                'is_archive' => '\'true\'',
+                'page_id' => 'ar_page_id',
+                'page_namespace' => 'ar_namespace',
+                'rev_id' => 'MAX(ar_rev_id)'
+            ),
+            array(
+                'ar_rev_id <= ' . $rev_id,
+                'ar_namespace' => $ns_id
+            ),
+            __METHOD__,
+            array(
+                'GROUP BY' => array('\'true\'', 'ar_page_id', 'ar_namespace')
+            )
+        );
         
+        $result = $this->dbw->query($sql);
     }
     
     public static function getTitleAtRevision(Revision $revision, $log_id = null)
