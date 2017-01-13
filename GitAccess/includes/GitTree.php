@@ -133,9 +133,16 @@ class GitTree
         return $instance;
     }
     
+    public static function newFromSubpages($titles, $rev_id, $log_id, &$repo)
+    {
+        
+    }
+    
     public static function newFromNamespace($rev_id, $log_id, $ns_id, &$repo)
     {
-        $sql = $this->dbw->selectSQLText(
+        $dbw = wfGetDB(DB_MASTER);
+        
+        $sql = $dbw->selectSQLText(
             array('page', 'revision'),
             array(
                 'is_archive' => '\'false\'',
@@ -156,7 +163,7 @@ class GitTree
             )
         );
         $sql .= ' UNION ';
-        $sql .= $this->dbw->selectSQLText(
+        $sql .= $dbw->selectSQLText(
             'archive',
             array(
                 'is_archive' => '\'true\'',
@@ -174,7 +181,48 @@ class GitTree
             )
         );
         
-        $result = $this->dbw->query($sql);
+        $result = $dbw->query($sql);
+        
+        $tree_data = array();
+        do
+        {
+            $row = $result->fetchRow();
+            if ($row)
+            {
+                // Fetch Revision
+                if ($row['is_archive'])
+                {
+                    $ar_row = $dbw->selectRow(
+                        'archive',
+                        Revision::selectArchiveFields(),
+                        array('ar_rev_id' => $row['rev_id'])
+                    );
+                    $revision = Revision::newFromArchiveRow($ar_row);
+                }
+                else
+                {
+                    $revision = Revision::newFromId($row['rev_id'], Revision::READ_LATEST);
+                }
+                
+                $titleValue = self::getTitleAtRevision($revision, $log_id);
+                $blob = new GitBlob($revision->getContent(Revision::RAW)->serialize(), $repo);
+                $blob->addToRepo();
+                array_push(
+                    $tree_data,
+                    array(
+                        'type' => self::T_NORMAL_FILE,
+                        'name' => $titleValue->getDBKey(),
+                        'hash_bin' => $blob->getHash(true)
+                    )
+                );
+            }
+        }
+        while ($row);
+        
+        $instance = new self($repo);
+        $instance->tree_data = $tree_data;
+        
+        return $instance;
     }
     
     public static function getTitleAtRevision(Revision $revision, $log_id = null)

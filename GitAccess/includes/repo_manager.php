@@ -261,24 +261,5 @@ class GitRepository
         }
         while ($row);
     }
-    
-    public static function createBlobObject($data)
-    {
-        $blob = 'blob ' . strlen($data) . "\0" . $data;
-        $hash_bin = hash('sha1', $blob, true);
-        $hash_hex = bin2hex($hash_bin);
-        return array('blob' => $blob, 'hash_hex' => $hash_hex, 'hash_bin' => $hash_bin);
-    }
-    
-    public static function readBlobObject($blob)
-    {
-        sscanf($blob, "blob %d\0", $length);
-        $data = substr(
-            $blob,
-            strpos($blob, "\0") + 1,
-            $length
-        );
-        return $data;
-    }
 }
 

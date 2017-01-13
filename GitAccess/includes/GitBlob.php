@@ -19,9 +19,48 @@
 
 class GitBlob
 {
-    public $data;
-    public $type;
+    protected $data;
+    protected $hash;
+    protected $repo;
     
-    public $content;
+    public function __construct($data, &$repo)
+    {
+       $this->data = $data;
+       $this->repo = &$repo;
+    }
     
+    public function getData()
+    {
+        return $this->data;
+    }
+    
+    public function getHash($binary = false)
+    {
+        if (!$this->hash)
+        {
+            $this->hash = hash('sha1', $this->export(), true);
+        }
+        return $binary ? $this->hash : bin2hex($this->hash);
+    }
+    
+    public function export()
+    {
+        return 'blob ' . strlen($this->data) . "\0" . $this->data;
+    }
+    
+    public function addToRepo()
+    {
+        $this->repo->blobs[$this->getHash()] = $this;
+    }
+    
+    public static function newFromData($blob, &$repo)
+    {
+        sscanf($blob, "blob %d\0", $length);
+        $data = substr(
+            $blob,
+            strpos($blob, "\0") + 1,
+            $length
+        );
+        return new self($data, $repo);
+    }
 }
