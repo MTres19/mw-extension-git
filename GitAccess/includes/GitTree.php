@@ -190,7 +190,7 @@ class GitTree
             if ($row)
             {
                 // Fetch Revision
-                if ($row['is_archive'])
+                if ($row['is_archive'] === 'true')
                 {
                     $ar_row = $dbw->selectRow(
                         'archive',
