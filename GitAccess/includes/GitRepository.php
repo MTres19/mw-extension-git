@@ -1,7 +1,7 @@
 <?php
 /**
  * GitAccess MediaWiki Extension---Access wiki content with Git.
- * Copyright (C) 2016  Matthew Trescott
+ * Copyright (C) 2017  Matthew Trescott
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -29,9 +29,11 @@ class GitRepository
     
     private $dbw;
     
-    public function __construct(&$dbw)
+    public static $instance = null;
+    
+    public function __construct()
     {
-        $this->dbw = $dbw;
+        $this->dbw = wfGetDB(DB_MASTER);
         $this->blobs => array();
         $this->trees => array();
         $this->commits => array();
@@ -260,6 +262,15 @@ class GitRepository
             }
         }
         while ($row);
+    }
+    
+    public static function &singleton()
+    {
+        if (!self::$instance)
+        {
+            self::$instance = new self(wfGetDB(DB_MASTER));
+        }
+        return self::$instance;
     }
 }
 

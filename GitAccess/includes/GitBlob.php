@@ -1,7 +1,7 @@
 <?php
 /**
  * GitAccess MediaWiki Extension---Access wiki content with Git.
- * Copyright (C) 2016  Matthew Trescott
+ * Copyright (C) 2017  Matthew Trescott
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -23,10 +23,10 @@ class GitBlob
     protected $hash;
     protected $repo;
     
-    public function __construct($data, &$repo)
+    public function __construct($data)
     {
        $this->data = $data;
-       $this->repo = &$repo;
+       $this->repo = &GitRepository::singleton();
     }
     
     public function getData()
@@ -53,7 +53,7 @@ class GitBlob
         $this->repo->blobs[$this->getHash()] = $this;
     }
     
-    public static function newFromData($blob, &$repo)
+    public static function newFromData($blob)
     {
         sscanf($blob, "blob %d\0", $length);
         $data = substr(
@@ -61,6 +61,6 @@ class GitBlob
             strpos($blob, "\0") + 1,
             $length
         );
-        return new self($data, $repo);
+        return new self($data);
     }
 }

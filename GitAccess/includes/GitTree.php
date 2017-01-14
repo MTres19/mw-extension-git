@@ -1,7 +1,7 @@
 <?php
 /**
  * GitAccess MediaWiki Extension---Access wiki content with Git.
- * Copyright (C) 2016  Matthew Trescott
+ * Copyright (C) 2017  Matthew Trescott
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -29,15 +29,15 @@ class GitTree
     const T_SYMLINK = 120000;
     const T_TREE = 40000;
     
-    public function __construct(&$repo)
+    public function __construct()
     {
-        $this->repo = &$repo;
+        $this->repo = &GitRepository::singleton();
         $this->dbw = wfGetDB(DB_MASTER);
     }
     
     public function addToRepo()
     {
-        $repo->trees[$this->getHash()] = $this;
+        $this->repo->trees[$this->getHash()] = $this;
     }
     
     public function getHash()
@@ -110,15 +110,15 @@ class GitTree
         return $tree_data;
     }
     
-    public static function newFromData($data, &$repo)
+    public static function newFromData($data)
     {
-        $instance = new self($repo);
+        $instance = new self();
         $instance->tree_data = self::parse($data);
     }
     
-    public static function newRoot($rev_id, $log_id, &$repo)
+    public static function newRoot($rev_id, $log_id,)
     {
-        $instance = new self($repo);
+        $instance = new self();
         $namespaces = array_diff(MWNamespace::getCanonicalNamespaces(), $GLOBALS['wgGitAccessNSBlacklist']);
         foreach ($namespaces as $id => $name)
         {
@@ -133,12 +133,12 @@ class GitTree
         return $instance;
     }
     
-    public static function newFromSubpages($titles, $rev_id, $log_id, &$repo)
+    public static function newFromSubpages($titles, $rev_id, $log_id)
     {
         
     }
     
-    public static function newFromNamespace($rev_id, $log_id, $ns_id, &$repo)
+    public static function newFromNamespace($rev_id, $log_id, $ns_id)
     {
         $dbw = wfGetDB(DB_MASTER);
         
@@ -205,7 +205,7 @@ class GitTree
                 }
                 
                 $titleValue = self::getTitleAtRevision($revision, $log_id);
-                $blob = new GitBlob($revision->getContent(Revision::RAW)->serialize(), $repo);
+                $blob = new GitBlob($revision->getContent(Revision::RAW)->serialize());
                 $blob->addToRepo();
                 array_push(
                     $tree_data,
@@ -219,7 +219,7 @@ class GitTree
         }
         while ($row);
         
-        $instance = new self($repo);
+        $instance = new self();
         $instance->tree_data = $tree_data;
         
         return $instance;

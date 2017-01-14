@@ -1,7 +1,7 @@
 <?php
 /**
  * GitAccess MediaWiki Extension---Access wiki content with Git.
- * Copyright (C) 2016  Matthew Trescott
+ * Copyright (C) 2017  Matthew Trescott
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -42,9 +42,9 @@ class GitCommit
     protected $dbw;
     protected $repo;
     
-    public function __construct(&$repo)
+    public function __construct()
     {
-        $this->repo = &$repo;
+        $this->repo = &GitRepository::singleton();
         $this->dbw = wfGetDB(DB_MASTER);
     }
     
@@ -139,7 +139,7 @@ class GitCommit
         $this->repo->commits[$this->getHash()] = $this;
     }
     
-    public static function newFromData($commit, &$repo)
+    public static function newFromData($commit)
     {
         $commit_data = array();
         preg_match(
@@ -157,7 +157,7 @@ class GitCommit
         
         $hash = hash('sha1', $commit);
         
-        $instance = new self($repo);
+        $instance = new self();
         $instance->commit_hash = $hash;
         $instance->parent_hashes = $parents;
         $instance->author_name = $commit_data[3];
@@ -174,9 +174,9 @@ class GitCommit
         return $instance;
     }
     
-    public static function newFromHashJournal($hash, &$repo)
+    public static function newFromHashJournal($hash)
     {
-        $instance = new self($repo);
+        $instance = new self();
         $row = $instance->dbw->selectRow(
             'git_hash',
             array(
@@ -208,9 +208,9 @@ class GitCommit
         return $instance;
     }
     
-    public static function newFromRevId($id, $previous_log_id &$repo)
+    public static function newFromRevId($id, $previous_log_id)
     {
-        $instance = new self($repo);
+        $instance = new self();
         
         $sql = $this->dbw-selectSQLText(
             'revision',
@@ -260,7 +260,7 @@ class GitCommit
         $instance->committer_timestamp = wfTimestamp(TS_UNIX, $revision->getTimestamp());
         $instance->committer_tzOffset = self::tzOffsetMwToUnix($user->getOption('timecorrection', $GLOBALS['wgLocalTZoffset'], true));
         
-        $instance->root_tree = GitTree::newRoot($id, $previous_log_id, $repo);
+        $instance->root_tree = GitTree::newRoot($id, $previous_log_id);
         
         return $instance;
     }
