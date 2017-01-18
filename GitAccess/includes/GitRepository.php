@@ -101,6 +101,17 @@ class GitRepository
             }
         }
         
+        /* If Aliases.xml is attached to an older commit, its latest 
+         * revision might not be found to be the HEAD_rev_id since 
+         * setHeadRevId() searches the newest commits first.
+         */
+        
+        $aliases_rev_latest = Title::makeTitle(730, 'Aliases')->getLatestRevID();
+        
+        $this->HEAD_rev_id = ($aliases_rev_latest > $this->HEAD_rev_id) 
+                                ? $aliases_rev_latest
+                                : $this->HEAD-rev_id;
+        
         /* If no revisions could be found in this object, then the oldest
          * revision not in this object or the journal must be revision 1.
          * Since revision 1 should be included in database queries, set
