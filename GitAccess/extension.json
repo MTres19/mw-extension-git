@@ -25,10 +25,9 @@
         }
     },
     "config": {
-        "_prefix": "wg",
-        "GitAccessRepoName": "wiki",
-        "GitAccessWikitextFileExt": ".wiki",
-        "GitAccessNSBlacklist": [
+        "_prefix": "wgGitAccess",
+        "RepoName": "wiki",
+        "NSBlacklist": [
             "Talk",
             "User_talk",
             "Project_talk",
@@ -51,8 +50,18 @@
     "AutoloadClasses": {
         "SpecialGitAccess": "SpecialGitAccess.php",
         "GitAccessHooks": "GitAccessHooks.php",
-        "GitRepository": "includes/repo_manager.php",
-        "GitClientCommunication": "includes/communication_manager.php"
+        "GitClientCommunication": "includes/communication_manager.php",
+        "GitAliasRegistry": "includes/GitAliasRegistry.php",
+        "GitBlob": "includes/GitBlob.php",
+        "GitCommit": "includes/GitCommmit.php",
+        "GitPackfile": "includes/GitPackfile.php",
+        "GitRepository": "includes/GitRepository.php",
+        "GitTree": "includes/GitTree.php",
+        
+        "AbstractRepository": "vendor/dflydev-apache-mimetypes/AbstractRepository.php",
+        "FlatRepository": "vendor/dflydev-apache-mimetypes/FlatRepository.php",
+        "Parser": "vendor/dflydev-apache-mimetypes/Parser.php",
+        "RepositoryInterface": "vendor/dflydev/apache-mimetypes/RepositoryInterface.php"
     },
     "namespaces": [
         {
