@@ -27,17 +27,17 @@
     "config": {
         "_prefix": "wgGitAccess",
         "RepoName": "wiki",
-        "NSBlacklist": [
-            "Talk",
-            "User_talk",
-            "Project_talk",
-            "File_talk",
-            "MediaWiki_talk",
-            "Template_talk",
-            "Help_talk",
-            "Category_talk",
-            "GitAccess_root_talk"
-        ]
+        "NSIncluded": {
+            "Talk": 0,
+            "User_talk": 0,
+            "Project_talk": 0,
+            "File_talk": 0,
+            "MediaWiki_talk": 0,
+            "Template_talk": 0,
+            "Help_talk": 0,
+            "Category_talk": 0,
+            "GitAccess_root_talk": 0
+        }
     },
     "SpecialPages": {
         "GitAccess": "SpecialGitAccess"

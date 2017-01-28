@@ -23,6 +23,7 @@ class GitTree
     
     protected $repo;
     protected $dbw;
+    protected $hash;
     
     const T_NORMAL_FILE = 100644;
     const T_EXEC_FILE = 100755;
@@ -40,9 +41,13 @@ class GitTree
         $this->repo->trees[$this->getHash()] = $this;
     }
     
-    public function getHash()
+    public function getHash($binary = false)
     {
-        return hash('sha1', $this->export());
+        if (!$this->hash)
+        {
+            $this->hash = hash('sha1', $this->export(), true);
+        }
+        return $binary ? $this->hash : bin2hex($this->hash);
     }
     
     public function export()
@@ -58,6 +63,49 @@ class GitTree
         $tree = 'tree ' . $length . "\0" . $tree;
         
         return $tree;
+    }
+    
+    public function processSubpages($ns_id)
+    {
+        if (!MWNamespace::hasSubpages($ns_id)) { return; }
+        
+        $subpages = array();
+        foreach ($this->tree_data as $key => $entry)
+        {
+            // Find the part before the first slash
+            if(preg_match('~^(.[^\/]*)\/(.+)$~', $entry['name'], $matches) === 0)
+            {
+                continue;
+            }
+            
+            /* Make sure there's an entry in the array of subpage directories
+             * that matches the containing part.
+             */
+            if (!$subpages[$matches[1]]) { $subpages[$matches[1]] = array(); }
+            $new_entry = array(
+                'name' => $matches[2],
+                'type' => self::T_NORMAL_FILE,
+                'hash_bin' => $entry['hash_bin'] // Blob doesn't change
+            );
+            array_push($subpages[$matches[1]], $new_entry); // Add the entry to the list files under the page
+            
+            unset($this->tree_data[$key]); // Remove the original entry from the main tree
+        }
+        
+        foreach ($subpages as $name => $entry)
+        {
+            $subpage_tree = new self();
+            $subpage_tree->tree_data = $entry;
+            $subpage_tree->processSubpages();
+            //Illegal characters and capitalization passes...?
+            $subpage_tree->addToRepo();
+            $subpage_tree_entry = array(
+                'name' => $name,
+                'type' => self::T_TREE,
+                'hash_bin' => $subpage_tree->getHash()
+            );
+            array_push($this->tree_data, $subpage_tree_entry);
+        }
     }
     
     public static function parse($tree)
@@ -118,24 +166,36 @@ class GitTree
     
     public static function newRoot($rev_id, $log_id,)
     {
-        $instance = new self();
-        $namespaces = array_diff(MWNamespace::getCanonicalNamespaces(), $GLOBALS['wgGitAccessNSBlacklist']);
-        foreach ($namespaces as $id => $name)
+        $instance = self::newFromNamespace($rev_id, $log_id, NS_GITACCESS_ROOT);
+        
+        $namespaces = array_flip(MWNamespace::getCanonicalNamespaces());
+        $namespaces = array_fill_keys(array_keys($namespaces), 1); // All namespaces included
+        $namespaces = array_merge($namespaces, $GLOBALS['wgGitAccessNSIncluded']); // Un-include some namespaces
+        $namespaces['Media'] = false; // Un-include dynamic namespaces
+        $namespaces['Special'] = false;
+        
+        foreach ($namespaces as $name => $isIncluded)
         {
-            if ($id >= 0)
-            {
-                
-            }
+            if (!$isIncluded) { continue; }
+            
+            $ns_tree = self::newFromNamespace(
+                $rev_id,
+                $log_id,
+                MWNamespace::getCanonicalIndex(strtolower($name))
+            );
+            $ns_tree->addToRepo();
+            
+            array_push(
+                $instance->tree_data,
+                array(
+                    'type' => self::T_TREE,
+                    'name' => $name ?: '(Main)',
+                    'hash_bin' => $instance->getHash(true)
+                )
+            );
         }
         
-        // ...
-        
         return $instance;
-    }
-    
-    public static function newFromSubpages($titles, $rev_id, $log_id)
-    {
-        
     }
     
     public static function newFromNamespace($rev_id, $log_id, $ns_id)
@@ -222,7 +282,7 @@ class GitTree
                     )
                 );
                 
-                if ($ns_id == NS_FILE) self::fetchFile($tree_data, $revision, $titleValue);
+                if ($ns_id == NS_FILE) { self::fetchFile($tree_data, $revision, $titleValue); }
             }
         }
         while ($row);
