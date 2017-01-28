@@ -17,13 +17,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-class GitBlob extends AbstractGitObject
+abstract class AbstractGitObject
 {
-    protected $data;
+    protected $dbw;
+    protected $hash;
+    protected $repo;
     
-    public function getData()
+    abstract public function addToRepo();
+    abstract public function export();
+    
+    public function __construct()
     {
-        return $this->data;
+        $this->repo = &GitRepository::singleton();
+        $this->dbw = wfGetDB(DB_MASTER);
     }
     
     public function getHash($binary = false)
@@ -35,31 +41,5 @@ class GitBlob extends AbstractGitObject
         return $binary ? $this->hash : bin2hex($this->hash);
     }
     
-    public function export()
-    {
-        return 'blob ' . strlen($this->data) . "\0" . $this->data;
-    }
-    
-    public function addToRepo()
-    {
-        $this->repo->blobs[$this->getHash()] = $this;
-    }
-    
-    public static function newFromData($blob)
-    {
-        sscanf($blob, "blob %d\0", $length);
-        $data = substr(
-            $blob,
-            strpos($blob, "\0") + 1,
-            $length
-        );
-        return new self($data);
-    }
-    
-    public static function newFromRaw($data)
-    {
-        $instance = new self();
-        $instance->data = $data;
-        return $instance;
-    }
+    abstract public static function newFromData();
 }

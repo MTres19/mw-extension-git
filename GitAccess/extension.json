@@ -51,6 +51,8 @@
         "SpecialGitAccess": "SpecialGitAccess.php",
         "GitAccessHooks": "GitAccessHooks.php",
         "GitClientCommunication": "includes/communication_manager.php",
+        
+        "AbstractGitObject": "includes/AbstractGitObject.php",
         "GitAliasRegistry": "includes/GitAliasRegistry.php",
         "GitBlob": "includes/GitBlob.php",
         "GitCommit": "includes/GitCommmit.php",

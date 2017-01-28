@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-class GitCommit
+class GitCommit extends AbstractGitObject
 {
     public $commit_hash;
     public $parent_hashes;
@@ -38,15 +38,6 @@ class GitCommit
     public $root_tree;
     public $root_tree_hash;
     public $is_head;
-    
-    protected $dbw;
-    protected $repo;
-    
-    public function __construct()
-    {
-        $this->repo = &GitRepository::singleton();
-        $this->dbw = wfGetDB(DB_MASTER);
-    }
     
     protected function populateIdsFromRevision()
     {
@@ -127,11 +118,6 @@ class GitCommit
         $commit = "commit $length" . "\0". $commit;
         
         return $commit;
-    }
-    
-    public function getHash()
-    {
-        return hash('sha1', $this->export());
     }
     
     public function addToRepo()

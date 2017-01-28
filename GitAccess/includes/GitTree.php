@@ -17,37 +17,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-class GitTree
+class GitTree extends AbstractGitObject
 {
     public $tree_data;
-    
-    protected $repo;
-    protected $dbw;
-    protected $hash;
     
     const T_NORMAL_FILE = 100644;
     const T_EXEC_FILE = 100755;
     const T_SYMLINK = 120000;
     const T_TREE = 40000;
     
-    public function __construct()
-    {
-        $this->repo = &GitRepository::singleton();
-        $this->dbw = wfGetDB(DB_MASTER);
-    }
     
     public function addToRepo()
     {
         $this->repo->trees[$this->getHash()] = $this;
-    }
-    
-    public function getHash($binary = false)
-    {
-        if (!$this->hash)
-        {
-            $this->hash = hash('sha1', $this->export(), true);
-        }
-        return $binary ? $this->hash : bin2hex($this->hash);
     }
     
     public function export()
@@ -269,7 +251,7 @@ class GitTree
                 }
                 
                 $titleValue = self::getTitleAtRevision($revision, $log_id);
-                $blob = new GitBlob($revision->getContent(Revision::RAW)->serialize());
+                $blob = GitBlob::newFromRaw($revision->getContent(Revision::RAW)->serialize());
                 $blob->addToRepo();
                 array_push(
                     $tree_data,
@@ -315,7 +297,7 @@ class GitTree
             preg_match('~^archive\\/(.*)$~', $file->getRel(), $matches);
             $path = $IP . '/images/' . $matches[1] . $file->getName();
         }
-        $blob = new GitBlob(file_get_contents($path));
+        $blob = GitBlob::newFromRaw(file_get_contents($path));
         $blob->addToRepo();
         
         array_push(
