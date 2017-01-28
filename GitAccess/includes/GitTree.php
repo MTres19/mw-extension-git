@@ -142,6 +142,7 @@ class GitTree
     {
         $dbw = wfGetDB(DB_MASTER);
         
+        /* {{{ SQL stuff */
         $sql = $dbw->selectSQLText(
             array('page', 'revision'),
             array(
@@ -180,9 +181,12 @@ class GitTree
                 'GROUP BY' => array('\'true\'', 'ar_page_id', 'ar_namespace')
             )
         );
-        
         $result = $dbw->query($sql);
+        /* }}}  End SQL stuff*/
         
+        $mimeTypesRepo = new Dflydev\ApacheMimeTypes\FlatRepository(
+            "$IP/extensions/GitAccess/vendor/dflydev-apache-mimetypes/mime.types"
+        );
         $tree_data = array();
         do
         {
@@ -211,10 +215,14 @@ class GitTree
                     $tree_data,
                     array(
                         'type' => self::T_NORMAL_FILE,
-                        'name' => $titleValue->getDBKey(),
+                        'name' => $titleValue->getDBKey() . ($ns_id != NS_FILE) 
+                                        ? self::determineFileExt($titleValue, $revision)
+                                        : self::determineFileExt($titleValue, $revision, true),
                         'hash_bin' => $blob->getHash(true)
                     )
                 );
+                
+                if ($ns_id == NS_FILE) self::fetchFile($tree_data, $revision, $titleValue);
             }
         }
         while ($row);
@@ -225,6 +233,41 @@ class GitTree
         return $instance;
     }
     
+    public static function fetchFile(&$tree_data, Revision $revision, TitleValue $title)
+    {
+        $file = RepoGroup::singleton()->getLocalRepo()->newFile(
+            $revision->getTitle(),
+            $revision->getTimestamp()
+        );
+        if (!$file) { return; }
+        /* newFile() always returns an OldLocalFile instance,
+         * so OldLocalFile::getRel() always returns a path containing
+         * 'archive'. However if the file is actually the current
+         * version, getArchiveName() will return NULL.
+         */
+        $fileIsOld = $file->getArchiveName() ? true : false;
+        if ($fileIsOld)
+        {
+            $path = $IP . '/images/' . $file->getRel() . $file->getArchiveName();
+        }
+        else
+        {
+            preg_match('~^archive\\/(.*)$~', $file->getRel(), $matches);
+            $path = $IP . '/images/' . $matches[1] . $file->getName();
+        }
+        $blob = new GitBlob(file_get_contents($path));
+        $blob->addToRepo();
+        
+        array_push(
+            $tree_data,
+            array(
+                'type' => self::T_NORMAL_FILE,
+                'name' => $title->getDBKey(),
+                'hash_bin' => $blob->getHash()
+            )
+        );
+    }
+    
     public static function getTitleAtRevision(Revision $revision, $log_id = null)
     {
         $dbw = wfGetDB(DB_MASTER);
@@ -233,7 +276,7 @@ class GitTree
             'log_action' => 'move',
             'log_timestamp <= ' . $revision->getTimestamp(),
         );
-        if ($log_id) array_push($conds, 'log_id <= ' . $log_id);
+        if ($log_id) { array_push($conds, 'log_id <= ' . $log_id); }
         
         $result = $dbw->selectRow(
             'logging',
@@ -257,6 +300,25 @@ class GitTree
         else
         {
             return new TitleValue($revision->getTitle()->getNamespace(), $revision->getTitle()->getDBKey());
+        }
+    }
+    
+    public static function determineFileExt(TitleValue $title, Revision $rev, $is_file_page = false)
+    {
+        $mimeTypesRepo = new Dflydev\ApacheMimeTypes\FlatRepository(
+            "$IP/extensions/GitAccess/vendor/dflydev-apache-mimetypes/mime.types"
+        );
+        
+        preg_match('~^.*\.(.[^\.]*)$~', $title->getDBKey(), $matches);
+        $extFromTitle = !empty($matches[1]) ? $matches[1] : null;
+        
+        if (!$is_file_page && $extFromTitle && $mimeTypesRepo->findType($extFromTitle))
+        {
+            return $extFromTitle;
+        }
+        else
+        {
+            return $mimeTypesRepo->findExtensions($rev->getContentFormat())[0];
         }
     }
 }
