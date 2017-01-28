@@ -300,7 +300,7 @@ class GitTree extends AbstractGitObject
                 $blob = GitBlob::newFromRaw($revision->getContent(Revision::RAW)->serialize());
                 $blob->addToRepo();
                 array_push(
-                    $this->tree_data,
+                    $instance->tree_data,
                     array(
                         'type' => self::T_NORMAL_FILE,
                         'name' => $titleValue->getDBKey() . (($ns_id != NS_FILE) 
@@ -311,6 +311,7 @@ class GitTree extends AbstractGitObject
                 );
                 
                 if ($ns_id == NS_FILE) { self::fetchFile($media_tree, $revision, $titleValue); }
+                if ($ns_id != NS_FILE) { $instance->processSubpages($ns_id); }
             }
         }
         while ($row);
