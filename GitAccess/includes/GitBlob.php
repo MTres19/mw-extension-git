@@ -42,7 +42,7 @@ class GitBlob extends AbstractGitObject
     
     public function addToRepo()
     {
-        $this->repo->blobs[$this->getHash()] = $this;
+        $this->repo->blobs[$this->getHash()] = &$this;
     }
     
     public static function newFromData($blob)

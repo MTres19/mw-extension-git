@@ -122,7 +122,7 @@ class GitCommit extends AbstractGitObject
     
     public function addToRepo()
     {
-        $this->repo->commits[$this->getHash()] = $this;
+        $this->repo->commits[$this->getHash()] = &$this;
     }
     
     public static function newFromData($commit)

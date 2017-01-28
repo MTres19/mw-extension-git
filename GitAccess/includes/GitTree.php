@@ -29,7 +29,7 @@ class GitTree extends AbstractGitObject
     
     public function addToRepo()
     {
-        $this->repo->trees[$this->getHash()] = $this;
+        $this->repo->trees[$this->getHash()] = &$this;
     }
     
     public function export()
@@ -38,7 +38,7 @@ class GitTree extends AbstractGitObject
         
         foreach ($this->tree_data as $entry)
         {
-            $tree = $tree . $entry['type'] . ' ' . $entry['name'] . "\0" . $entry['hash_bin'];
+            $tree = $tree . $entry['type'] . ' ' . $entry['name'] . "\0" . $entry['object']->getHash(true);
         }
         
         $length = strlen($tree);
@@ -67,7 +67,7 @@ class GitTree extends AbstractGitObject
             $new_entry = array(
                 'name' => $matches[2],
                 'type' => self::T_NORMAL_FILE,
-                'hash_bin' => $entry['hash_bin'] // Blob doesn't change
+                'object' => &$entry['object'] // Blob doesn't change
             );
             array_push($subpages[$matches[1]], $new_entry); // Add the entry to the list files under the page
             
@@ -84,7 +84,7 @@ class GitTree extends AbstractGitObject
             $subpage_tree_entry = array(
                 'name' => $name,
                 'type' => self::T_TREE,
-                'hash_bin' => $subpage_tree->getHash()
+                'object' => &$subpage_tree
             );
             array_push($this->tree_data, $subpage_tree_entry);
         }
@@ -128,15 +128,30 @@ class GitTree extends AbstractGitObject
                 );
                 
                 $hash_bin = substr($raw_entries, $i + 1, 20);
-                $hash_hex = bin2hex($hash_bin);
                 
-                $file_entry = array('type' => $type_id, 'name' => $filename, 'hash' => $hash_hex);
+                $file_entry = array('type' => $type_id, 'name' => $filename, 'hash_bin' => $hash_bin);
                 array_push($tree_data, $file_entry);
                 
                 $i = $i + 21; // Push $i past the hash
                 $beginning_of_entry = $i;
             }
         }
+        // Fetch the object in object form
+        foreach ($tree_data as $key => $entry)
+        {
+            switch $entry['type'] {
+                case self::T_NORMAL_FILE:
+                case self::T_EXEC_FILE:
+                    $tree_data[$key]['object'] = $this->repo->&fetchBlob(bin2hex($entry['hash_bin']));
+                    break;
+                case self::T_TREE:
+                    $tree_data[$key]['object'] = $this->repo->&fetchTree(bin2hex($entry['hash_bin']));
+                    break;
+                default:
+                    // Panic/convulsions...? Who knows?
+            }
+        }
+        
         return $tree_data;
     }
     
@@ -172,7 +187,7 @@ class GitTree extends AbstractGitObject
                 array(
                     'type' => self::T_TREE,
                     'name' => $name ?: '(Main)',
-                    'hash_bin' => $instance->getHash(true)
+                    'object' => &$instance
                 )
             );
         }
@@ -260,7 +275,7 @@ class GitTree extends AbstractGitObject
                         'name' => $titleValue->getDBKey() . ($ns_id != NS_FILE) 
                                         ? self::determineFileExt($titleValue, $revision)
                                         : self::determineFileExt($titleValue, $revision, true),
-                        'hash_bin' => $blob->getHash(true)
+                        'object' => &$blob
                     )
                 );
                 
@@ -303,9 +318,11 @@ class GitTree extends AbstractGitObject
         array_push(
             $tree_data,
             array(
-                'type' => self::T_NORMAL_FILE,
+                'type' => ($file->getMediaType == MEDIATYPE_EXECUTABLE)
+                            ? self::T_EXEC_FILE
+                            : self::T_NORMAL_FILE,
                 'name' => $title->getDBKey(),
-                'hash_bin' => $blob->getHash()
+                'object' => &$blob
             )
         );
     }
