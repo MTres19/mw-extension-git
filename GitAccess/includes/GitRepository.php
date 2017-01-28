@@ -106,7 +106,7 @@ class GitRepository
          * setHeadRevId() searches the newest commits first.
          */
         
-        $aliases_rev_latest = Title::makeTitle(730, 'Aliases')->getLatestRevID();
+        $aliases_rev_latest = Title::makeTitle(NS_GITACCESS_ROOT, 'Aliases')->getLatestRevID();
         
         $this->HEAD_rev_id = ($aliases_rev_latest > $this->HEAD_rev_id) 
                                 ? $aliases_rev_latest
