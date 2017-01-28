@@ -168,26 +168,55 @@ class GitTree extends AbstractGitObject
         $namespaces = array_flip(MWNamespace::getCanonicalNamespaces());
         $namespaces = array_fill_keys(array_keys($namespaces), 1); // All namespaces included
         $namespaces = array_merge($namespaces, $GLOBALS['wgGitAccessNSIncluded']); // Un-include some namespaces
-        $namespaces['Media'] = false; // Un-include dynamic namespaces
+        /* Un-include dynamically generated namespaces.
+         * Note that the Media folder is used to store files with GitAccess.
+         * The File folder stores the description pages.
+         */
+        $namespaces['Media'] = false;
         $namespaces['Special'] = false;
+
         
         foreach ($namespaces as $name => $isIncluded)
         {
             if (!$isIncluded) { continue; }
+            if ($name == 'File')
+            {
+                $media_tree = new self();
+                $media_tree->tree_data = array();
+            }
             
             $ns_tree = self::newFromNamespace(
                 $rev_id,
                 $log_id,
-                MWNamespace::getCanonicalIndex(strtolower($name))
+                MWNamespace::getCanonicalIndex(strtolower($name)),
+                (($name == 'File') ? $media_tree : null)
             );
-            $ns_tree->addToRepo();
             
+            // Empty trees should not be included
+            if ($ns_tree->tree_data)
+            {
+                $ns_tree->addToRepo();
+                array_push(
+                    $instance->tree_data,
+                    array(
+                        'type' => self::T_TREE,
+                        'name' => $name ?: '(Main)',
+                        'object' => &$instance
+                    )
+                );
+            }
+        }
+        
+        // Empty trees should not be included
+        if ($media_tree->tree_data)
+        {
+            $media_tree->addToRepo();
             array_push(
                 $instance->tree_data,
                 array(
                     'type' => self::T_TREE,
-                    'name' => $name ?: '(Main)',
-                    'object' => &$instance
+                    'name' => 'Media',
+                    'object' => &$media_tree
                 )
             );
         }
@@ -195,7 +224,7 @@ class GitTree extends AbstractGitObject
         return $instance;
     }
     
-    public static function newFromNamespace($rev_id, $log_id, $ns_id)
+    public static function newFromNamespace($rev_id, $log_id, $ns_id, &$media_tree = null)
     {
         $dbw = wfGetDB(DB_MASTER);
         
@@ -244,7 +273,9 @@ class GitTree extends AbstractGitObject
         $mimeTypesRepo = new Dflydev\ApacheMimeTypes\FlatRepository(
             "$IP/extensions/GitAccess/vendor/dflydev-apache-mimetypes/mime.types"
         );
-        $tree_data = array();
+        
+        $instance = new self();
+        $instance->tree_data = array();
         do
         {
             $row = $result->fetchRow();
@@ -269,28 +300,25 @@ class GitTree extends AbstractGitObject
                 $blob = GitBlob::newFromRaw($revision->getContent(Revision::RAW)->serialize());
                 $blob->addToRepo();
                 array_push(
-                    $tree_data,
+                    $this->tree_data,
                     array(
                         'type' => self::T_NORMAL_FILE,
-                        'name' => $titleValue->getDBKey() . ($ns_id != NS_FILE) 
+                        'name' => $titleValue->getDBKey() . (($ns_id != NS_FILE) 
                                         ? self::determineFileExt($titleValue, $revision)
-                                        : self::determineFileExt($titleValue, $revision, true),
+                                        : self::determineFileExt($titleValue, $revision, true)),
                         'object' => &$blob
                     )
                 );
                 
-                if ($ns_id == NS_FILE) { self::fetchFile($tree_data, $revision, $titleValue); }
+                if ($ns_id == NS_FILE) { self::fetchFile($media_tree, $revision, $titleValue); }
             }
         }
         while ($row);
         
-        $instance = new self();
-        $instance->tree_data = $tree_data;
-        
         return $instance;
     }
     
-    public static function fetchFile(&$tree_data, Revision $revision, TitleValue $title)
+    public static function fetchFile(GitTree &$media_tree, Revision $revision, TitleValue $title)
     {
         $file = RepoGroup::singleton()->getLocalRepo()->newFile(
             $revision->getTitle(),
@@ -316,7 +344,7 @@ class GitTree extends AbstractGitObject
         $blob->addToRepo();
         
         array_push(
-            $tree_data,
+            $media_tree->tree_data,
             array(
                 'type' => ($file->getMediaType == MEDIATYPE_EXECUTABLE)
                             ? self::T_EXEC_FILE
