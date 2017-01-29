@@ -311,7 +311,7 @@ class GitTree extends AbstractGitObject
                 );
                 
                 if ($ns_id == NS_FILE) { self::fetchFile($media_tree, $revision, $titleValue); }
-                if ($ns_id != NS_FILE) { $instance->processSubpages($ns_id); }
+                if ($ns_id != NS_FILE && $ns_id != NS_GITACCESS_ROOT) { $instance->processSubpages($ns_id); }
             }
         }
         while ($row);
