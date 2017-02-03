@@ -15,8 +15,13 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * @file
  */
 
+/**
+ * Class interfacing between Git tree objects and MediaWiki's pages.
+ */
 class GitTree extends AbstractGitObject
 {
     public $tree_data;
@@ -47,6 +52,15 @@ class GitTree extends AbstractGitObject
         return $tree;
     }
     
+    /**
+     * Organizes files into subtrees
+     * Finds files with a forward slash in the name and builds a
+     * directory structure.
+     * 
+     * @param int $ns_id The namespace id (e.g. NS_MAIN, NS_TALK, etc.) that this
+     * tree represents or is in. Used to determine whether to attempt to process
+     * the subpages.
+     */
     public function processSubpages($ns_id)
     {
         if (!MWNamespace::hasSubpages($ns_id)) { return; }
@@ -163,7 +177,16 @@ class GitTree extends AbstractGitObject
         $instance->tree_data = self::parse($data);
     }
     
-    public static function newRoot($rev_id, $log_id,)
+    /**
+     * Generate a new root GitTree
+     * Creates a tree from the GitAccess_root namespace, then appends other namespaces
+     * to it as directories.
+     * 
+     * @param int $rev_id The revision ID to build the tree at
+     * @param int $log_id The log ID used for reference when building the tree.
+     * @return GitTree The root tree
+     */
+    public static function newRoot($rev_id, $log_id)
     {
         $instance = self::newFromNamespace($rev_id, $log_id, NS_GITACCESS_ROOT);
         
@@ -226,6 +249,16 @@ class GitTree extends AbstractGitObject
         return $instance;
     }
     
+    /**
+     * Generates a new GitTree from a single namespace
+     * 
+     * @param int $rev_id The revision ID to build the tree at
+     * @param int $log_id The log ID used for reference when building the tree.
+     * @param int $ns_id The namespace ID to build the tree from
+     * @param GitTree &$media_tree (optional) The GitTree used to store files. Populated when
+     * $ns_id is NS_FILE.
+     * @return GitTree The generated GitTree
+     */
     public static function newFromNamespace($rev_id, $log_id, $ns_id, &$media_tree = null)
     {
         $dbw = wfGetDB(DB_MASTER);
@@ -308,9 +341,7 @@ class GitTree extends AbstractGitObject
                         $instance->tree_data,
                             array(
                             'type' => self::T_NORMAL_FILE,
-                            'name' => $titleValue->getDBKey() . (($ns_id != NS_FILE)
-                                            ? self::determineFileExt($titleValue, $revision)
-                                            : self::determineFileExt($titleValue, $revision, true)),
+                            'name' => $titleValue->getDBKey() . self::determineFileExt($titleValue, $revision),
                             'object' => &$blob
                         )
                     );
@@ -327,6 +358,13 @@ class GitTree extends AbstractGitObject
         return $instance;
     }
     
+    /**
+     * Fetches a file and adds it to the tree representing the Media  namespace
+     * 
+     * @param GitTree &$media_tree The GitTree used to add the file to
+     * @param Revision $revision The revision of the page in the File namespace
+     * @param TitleValue $title The time-dependent title of the revision (see GitTree::getTitleAtRevision())
+     */
     public static function fetchFile(GitTree &$media_tree, Revision $revision, TitleValue $title)
     {
         $file = RepoGroup::singleton()->getLocalRepo()->newFile(
@@ -364,6 +402,17 @@ class GitTree extends AbstractGitObject
         );
     }
     
+    /**
+     * Gets the actual name a page had at a point in history.
+     * Revision::getTitle() always returns the current title of the page,
+     * which causes big problems since it would change the hashes of Git trees.
+     * This utility method searches the logging table to be sure the page wasn't moved
+     * in the past.
+     * 
+     * @param Revision $revision The revision to fetch the title for
+     * @param int $log_id (optional) The log_id to use in searching the logging table, for better accuracy
+     * @return TitleValue The title of the page at the given revision
+     */
     public static function getTitleAtRevision(Revision $revision, $log_id = null)
     {
         $dbw = wfGetDB(DB_MASTER);
@@ -399,7 +448,21 @@ class GitTree extends AbstractGitObject
         }
     }
     
-    public static function determineFileExt(TitleValue $title, Revision $rev, $is_file_page = false)
+    /**
+     * Decides the file extension a file should have
+     * This is usually based on the mimetype stored in the revision table,
+     * but some pages like user CSS and JavaScript pages have their content
+     * format fields based on the page name. It wouldn't make sense to have
+     * User/MTres19/my_css.css.css, which is what you'd get without checking
+     * for existing file extensions. Of course, this should be skipped in the
+     * File namespace.
+     * 
+     * @param TitleValue $title The title of page to find the file extension for
+     * @param Revision $rev The revision to get the mimetype from if needed
+     * @return string The file extension, including the dot, or an empty sting if
+     * the page name already contains an extension.
+     */
+    public static function determineFileExt(TitleValue $title, Revision $rev)
     {
         $mimeTypesRepo = new Dflydev\ApacheMimeTypes\FlatRepository(
             "$IP/extensions/GitAccess/vendor/dflydev-apache-mimetypes/mime.types"
@@ -408,16 +471,24 @@ class GitTree extends AbstractGitObject
         preg_match('~^.*\.(.[^\.]*)$~', $title->getDBKey(), $matches);
         $extFromTitle = !empty($matches[1]) ? $matches[1] : null;
         
-        if (!$is_file_page && $extFromTitle && $mimeTypesRepo->findType($extFromTitle))
+        if ($title->getNamespace() != NS_FILE && $extFromTitle && $mimeTypesRepo->findType($extFromTitle))
         {
-            return $extFromTitle;
+            return '';
         }
         else
         {
-            return $mimeTypesRepo->findExtensions($rev->getContentFormat())[0];
+            return '.' . $mimeTypesRepo->findExtensions($rev->getContentFormat())[0];
         }
     }
-
+    
+    /**
+     * Figures out whether the page was deleted at the time
+     * (Whether it should appear in the tree)
+     * 
+     * @param TitleValue $title The title of the page to check
+     * @param int $log_id The most recent log ID for the commit referencing this tree
+     */
+    
     public static function pageExisted(TitleValue $title, $log_id)
     {
         $dbw = wfGetDB(DB_MASTER);
