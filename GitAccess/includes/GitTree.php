@@ -54,6 +54,8 @@ class GitTree extends AbstractGitObject
         $subpages = array();
         foreach ($this->tree_data as $key => $entry)
         {
+            if ($entry['type'] != self::T_NORMAL_FILE) { continue; }
+            
             // Find the part before the first slash
             if(preg_match('~^(.[^\/]*)\/(.+)$~', $entry['name'], $matches) === 0)
             {
