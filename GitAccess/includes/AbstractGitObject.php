@@ -23,15 +23,37 @@ abstract class AbstractGitObject
     protected $hash;
     protected $repo;
     
+    /**
+     * Add the object to the GitRepository singleton.
+     * Calls AbstractGitObject::getHash(), so be make sure any filter passes
+     * have already been run when using on a GitTree object.
+     */
     abstract public function addToRepo();
+    
+    /**
+     * Get the serialized form of the object in Git's format.
+     * This is the data that is hashed to get the object's hash.
+     * 
+     * @return string The serialized form of the object, ready to be used in a real repository
+     */
     abstract public function export();
     
+    /**
+     * Constructor.
+     */
     public function __construct()
     {
         $this->repo = &GitRepository::singleton();
         $this->dbw = wfGetDB(DB_MASTER);
     }
     
+    /**
+     * Get the SHA-1 hash of the exported version of the object.
+     * If the $binary parameter is set to false (default), the 40-character hexadecimal
+     * representation of the hash will be returned.
+     * 
+     * @param bool $binary (optional) Return the binary 20-byte checksum in a binary string.
+     */
     public function getHash($binary = false)
     {
         if (!$this->hash)
@@ -41,5 +63,10 @@ abstract class AbstractGitObject
         return $binary ? $this->hash : bin2hex($this->hash);
     }
     
-    abstract public static function newFromData();
+    /**
+     * Parse/de-serialize a raw Git object, as perhaps sent in a packfile.
+     * 
+     * @param string $data The raw (but uncompressed) Git object to parse
+     */
+    abstract public static function newFromData($data);
 }
