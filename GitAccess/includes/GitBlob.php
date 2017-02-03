@@ -15,12 +15,21 @@
  * 
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * @file
  */
 
+/**
+ * Immutable class representing a Git blob object.
+ */
 class GitBlob extends AbstractGitObject
 {
+    /** @var string Contains the data of the the blob */
     protected $data;
     
+    /**
+     * Return the raw data, without the blob prefix
+     */
     public function getData()
     {
         return $this->data;
@@ -56,6 +65,10 @@ class GitBlob extends AbstractGitObject
         return new self($data);
     }
     
+    /**
+     * Create a new GitBlob from raw data, like what one might find in the text table.
+     * @param string The raw data (without Git headers) to make the blob from
+     */
     public static function newFromRaw($data)
     {
         $instance = new self();
