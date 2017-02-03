@@ -299,20 +299,24 @@ class GitTree extends AbstractGitObject
                 }
                 
                 $titleValue = self::getTitleAtRevision($revision, $log_id);
-                $blob = GitBlob::newFromRaw($revision->getContent(Revision::RAW)->serialize());
-                $blob->addToRepo();
-                array_push(
-                    $instance->tree_data,
-                    array(
-                        'type' => self::T_NORMAL_FILE,
-                        'name' => $titleValue->getDBKey() . (($ns_id != NS_FILE) 
-                                        ? self::determineFileExt($titleValue, $revision)
-                                        : self::determineFileExt($titleValue, $revision, true)),
-                        'object' => &$blob
-                    )
-                );
                 
-                if ($ns_id == NS_FILE) { self::fetchFile($media_tree, $revision, $titleValue); }
+                if (self::pageExisted($titleValue, $log_id))
+                {
+                    $blob = GitBlob::newFromRaw($revision->getContent(Revision::RAW)->serialize());
+                    $blob->addToRepo();
+                    array_push(
+                        $instance->tree_data,
+                            array(
+                            'type' => self::T_NORMAL_FILE,
+                            'name' => $titleValue->getDBKey() . (($ns_id != NS_FILE)
+                                            ? self::determineFileExt($titleValue, $revision)
+                                            : self::determineFileExt($titleValue, $revision, true)),
+                            'object' => &$blob
+                        )
+                    );
+                    
+                    if ($ns_id == NS_FILE) { self::fetchFile($media_tree, $revision, $titleValue); }
+                }
             }
         }
         while ($row);
@@ -411,6 +415,36 @@ class GitTree extends AbstractGitObject
         else
         {
             return $mimeTypesRepo->findExtensions($rev->getContentFormat())[0];
+        }
+    }
+
+    public static function pageExisted(TitleValue $title, $log_id)
+    {
+        $dbw = wfGetDB(DB_MASTER);
+        $del_log_id = $dbw->selectField(
+            'logging',
+            'MAX(log_id)',
+            array(
+                'log_id <= ' . $log_id,
+                'log_type' => 'delete',
+                'log_namespace' => $title->getNamespace(),
+                'log_title' => $title->getDBKey()
+            )
+        );
+        
+        $action = $dbw->selectField(
+            'logging',
+            'log_action',
+            array('log_id' => $del_log_id)
+        );
+        
+        if ($action = 'delete')
+        {
+            return false;
+        }
+        elseif ($action = 'restore')
+        {
+            return true;
         }
     }
 }
