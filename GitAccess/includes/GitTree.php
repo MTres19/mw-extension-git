@@ -341,7 +341,7 @@ class GitTree extends AbstractGitObject
                         $instance->tree_data,
                             array(
                             'type' => self::T_NORMAL_FILE,
-                            'name' => $titleValue->getDBKey() . self::determineFileExt($titleValue, $revision),
+                            'name' => $titleValue->getDBkey() . self::determineFileExt($titleValue, $revision),
                             'object' => &$blob
                         )
                     );
@@ -396,7 +396,7 @@ class GitTree extends AbstractGitObject
                 'type' => ($file->getMediaType == MEDIATYPE_EXECUTABLE)
                             ? self::T_EXEC_FILE
                             : self::T_NORMAL_FILE,
-                'name' => $title->getDBKey(),
+                'name' => $title->getDBkey(),
                 'object' => &$blob
             )
         );
@@ -416,35 +416,121 @@ class GitTree extends AbstractGitObject
     public static function getTitleAtRevision(Revision $revision, $log_id = null)
     {
         $dbw = wfGetDB(DB_MASTER);
-        $conds = array(
-            'log_page' => $revision->getPage(),
-            'log_action' => 'move',
-            'log_timestamp <= ' . $revision->getTimestamp(),
-        );
-        if ($log_id) { array_push($conds, 'log_id <= ' . $log_id); }
         
-        $result = $dbw->selectRow(
-            'logging',
-            array(
-                'log_id' => 'MAX(log_id)'
-            ),
-            $conds
+        // Make page merge info available for querying
+        $mergeLogsFiller = new FillMergeLogFieldsJob(Title::newMainPage(), array());
+        $mergeLogsFiller->run();
+        
+        // Merge log stuff {{{
+        $merge_dest_title = $revision->getTitle()->getDBkey();
+        $merge_dest_ns = $revision->getTit()->getNamespace();
+        $previous_merge_result_row = null;
+        do
+        {
+            $merge_result = $dbw->selectRow(
+                'logging',
+                array(
+                    'log_id' => 'MIN(log_id)'
+                ),
+                array(
+                    'log_merge_destination' => $merge_dest_title,
+                    'log_merge_destination_namespace' => $merge_dest_ns,
+                    'log_merge_mergepoint >= ' . $revision->getTimestamp()
+                )
+            );
+            if ($merge_result->log_id)
+            {
+                // Fetch the whole row
+                $merge_result_row = $dbw->selectRow('logging', '*', ['log_id' => $merge_result->log_id]);
+                
+                if ($revision->getTimestamp() >= $merge_result_row->log_timestamp)
+                {
+                    /* The merge found happened before the revision, so the destination
+                     * of the merge must be the title of the page. Later we'll search to
+                     * see whether the page was moved after merging.
+                     * 
+                     * This isn't technically necessary. We could just assume the revision's
+                     * title is ambiguous and go through another iteration until it's discovered
+                     * that the mergepoint was older than the revision, but that would be wasteful.
+                     */
+                    $method = 'SEARCH_MOVES_WITH_TITLE';
+                    $title = $merge_result_row->log_merge_destination;
+                    $title_ns = $merge_result_row->log_merge_destination_namespace;
+                    break;
+                }
+                else
+                {
+                    /* The merge happened after the revision, so we don't know whether it
+                     * used to be a revision of a different page. We'll look again to see
+                     * whether there was an older merge that happened under a different title
+                     * (i.e. the source of this merge might have been the destination of another.
+                     */
+                    $merge_dest_title = $merge_result_row->log_title;
+                    $merge_dest_ns = $merge_result_row->log_namespace;
+                    $previous_merge_result_row = $merge_result_row;
+                    continue;
+                }
+            }
+            elseif ($previous_merge_result_row)
+            {
+                /* No more merges were found where the revision was older than the mergepoint.
+                 * Therefore, the previous merge log entry must show the true source of the revision.
+                 */
+                $method = 'SEARCH_MOVES_WITH_TITLE';
+                $title = $previous_merge_result_row->log_merge_destination;
+                $title_ns = $previous_merge_result_row->log_merge_destination_namespace;
+            }
+            else
+            {
+                /* No merge log entries were found in this iteration, and if there were a previous
+                 * iteration, $previous_merge_result_row would not be null.
+                 */
+                $method = 'UNMERGED';
+                break;
+            }
+        }
+        while ($merge_result->log_id);
+        // }}}
+        
+        $move_search_conds = array(
+            'log_timestamp <= ' . $revision->getTimestamp(),
+            'log_type' => 'move'
         );
-        if ($result->log_id)
+        switch ($method)
+        {
+            case 'UNMERGED':
+                $move_search_conds['log_page'] = $revision->getPage();
+                break;
+            case 'SEARCH_MOVES_WITH_TITLE':
+                $move_search_conds['log_title'] = $title;
+                $move_search_conds['log_namespace'] = $title_ns;
+                break;
+        }
+        
+        $move_search_result = $dbw->selectRow('logging', ['log_id' => 'MAX(log_id)'], $move_search_conds);
+        
+        if ($move_search_result->log_id)
         {
             $titleText = DatabaseLogEntry::newFromRow(
                 $dbw->selectRow(
                     'logging',
                     '*',
-                    'log_id=' . $result->log_id
+                    'log_id=' . $move_result->log_id
                 )
             )->getParameters()['4::target'];
             
-            return MediaWikiServices::getInstance()->getTitleParser()->parseTitle($titleText, NS_MAIN);
+            return MediaWiki\MediaWikiServices::getInstance()->getTitleParser()->parseTitle($titleText, NS_MAIN);
         }
-        else
+        elseif ($method == 'SEARCH_MOVES_WITH_TITLE')
         {
-            return new TitleValue($revision->getTitle()->getNamespace(), $revision->getTitle()->getDBKey());
+            return new TitleValue(
+                $title,
+                $title_ns
+            );
+        }
+        else // i.e. no merge or move logs found
+        {
+            return $revision->getTitle()->getTitleValue();
         }
     }
     
@@ -468,7 +554,7 @@ class GitTree extends AbstractGitObject
             "$IP/extensions/GitAccess/vendor/dflydev-apache-mimetypes/mime.types"
         );
         
-        preg_match('~^.*\.(.[^\.]*)$~', $title->getDBKey(), $matches);
+        preg_match('~^.*\.(.[^\.]*)$~', $title->getDBkey(), $matches);
         $extFromTitle = !empty($matches[1]) ? $matches[1] : null;
         
         if ($title->getNamespace() != NS_FILE && $extFromTitle && $mimeTypesRepo->findType($extFromTitle))
@@ -499,7 +585,7 @@ class GitTree extends AbstractGitObject
                 'log_id <= ' . $log_id,
                 'log_type' => 'delete',
                 'log_namespace' => $title->getNamespace(),
-                'log_title' => $title->getDBKey()
+                'log_title' => $title->getDBkey()
             )
         );
         

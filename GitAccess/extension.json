@@ -45,7 +45,13 @@
     "Hooks": {
         "LoadExtensionSchemaUpdates": [
             "GitAccessHooks::onLoadExtensionSchemaUpdates"
+        ],
+        "ArticleMergeComplete": [
+            "GitAccessHooks::onArticleMergeComplete"
         ]
+    },
+    "JobClasses": {
+        "fillMergeLogFields": "FillMergeLogFieldsJob"
     },
     "AutoloadClasses": {
         "SpecialGitAccess": "SpecialGitAccess.php",
@@ -59,6 +65,8 @@
         "GitPackfile": "includes/GitPackfile.php",
         "GitRepository": "includes/GitRepository.php",
         "GitTree": "includes/GitTree.php",
+        
+        "FillMergeLogFieldsJob": "jobs/FillMergeLogFieldsJob.php",
         
         "AbstractRepository": "vendor/dflydev-apache-mimetypes/AbstractRepository.php",
         "FlatRepository": "vendor/dflydev-apache-mimetypes/FlatRepository.php",

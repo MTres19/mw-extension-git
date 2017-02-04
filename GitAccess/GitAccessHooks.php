@@ -1,7 +1,7 @@
 <?php
 /**
  * GitAccess MediaWiki Extension---Access wiki content with Git.
- * Copyright (C) 2016  Matthew Trescott
+ * Copyright (C) 2017  Matthew Trescott
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -69,6 +69,18 @@ class GitAccessHooks
             );
         }
         
+        $dbUpdater->addExtensionField(
+            'logging',
+            'log_merge_destination',
+            dirname(__FILE__) . '/sql/patch-logging-merge-fields.sql'
+        );
+        
         return true;
+    }
+    
+    public static function onArticleMergeComplete($targetTitle, $destTitle)
+    {
+        $job = new FillMergeLogFieldsJob($destTitle, array());
+        JobQueueGroup::singleton()->push($job);
     }
 }       
