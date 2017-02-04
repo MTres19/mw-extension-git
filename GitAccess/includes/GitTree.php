@@ -155,13 +155,13 @@ class GitTree extends AbstractGitObject
         // Fetch the object in object form
         foreach ($tree_data as $key => $entry)
         {
-            switch $entry['type'] {
+            switch ($entry['type']) {
                 case self::T_NORMAL_FILE:
                 case self::T_EXEC_FILE:
-                    $tree_data[$key]['object'] = $this->repo->&fetchBlob(bin2hex($entry['hash_bin']));
+                    $tree_data[$key]['object'] = &$this->repo->fetchBlob(bin2hex($entry['hash_bin']));
                     break;
                 case self::T_TREE:
-                    $tree_data[$key]['object'] = $this->repo->&fetchTree(bin2hex($entry['hash_bin']));
+                    $tree_data[$key]['object'] = &$this->repo->fetchTree(bin2hex($entry['hash_bin']));
                     break;
                 default:
                     // Panic/convulsions...? Who knows?
@@ -306,7 +306,7 @@ class GitTree extends AbstractGitObject
         /* }}}  End SQL stuff*/
         
         $mimeTypesRepo = new Dflydev\ApacheMimeTypes\FlatRepository(
-            "$IP/extensions/GitAccess/vendor/dflydev-apache-mimetypes/mime.types"
+            $GLOBALS['IP'] . '/extensions/GitAccess/vendor/dflydev-apache-mimetypes/mime.types'
         );
         
         $instance = new self();
@@ -321,7 +321,7 @@ class GitTree extends AbstractGitObject
                 {
                     $ar_row = $dbw->selectRow(
                         'archive',
-                        Revision::selectArchiveFields(),
+                        '*',
                         array('ar_rev_id' => $row['rev_id'])
                     );
                     $revision = Revision::newFromArchiveRow($ar_row);
@@ -345,6 +345,8 @@ class GitTree extends AbstractGitObject
                             'object' => &$blob
                         )
                     );
+                    
+                    unset($blob); // Avoid overwriting the reference on next iteration
                     
                     if ($ns_id == NS_FILE) { self::fetchFile($media_tree, $revision, $titleValue); }
                 }
@@ -380,12 +382,12 @@ class GitTree extends AbstractGitObject
         $fileIsOld = $file->getArchiveName() ? true : false;
         if ($fileIsOld)
         {
-            $path = $IP . '/images/' . $file->getRel() . $file->getArchiveName();
+            $path = $GLOBALS['IP'] . '/images/' . $file->getRel() . $file->getArchiveName();
         }
         else
         {
             preg_match('~^archive\\/(.*)$~', $file->getRel(), $matches);
-            $path = $IP . '/images/' . $matches[1] . $file->getName();
+            $path = $GLOBALS['IP'] . '/images/' . $matches[1] . $file->getName();
         }
         $blob = GitBlob::newFromRaw(file_get_contents($path));
         $blob->addToRepo();
@@ -423,7 +425,7 @@ class GitTree extends AbstractGitObject
         
         // Merge log stuff {{{
         $merge_dest_title = $revision->getTitle()->getDBkey();
-        $merge_dest_ns = $revision->getTit()->getNamespace();
+        $merge_dest_ns = $revision->getTitle()->getNamespace();
         $previous_merge_result_row = null;
         do
         {
@@ -551,7 +553,7 @@ class GitTree extends AbstractGitObject
     public static function determineFileExt(TitleValue $title, Revision $rev)
     {
         $mimeTypesRepo = new Dflydev\ApacheMimeTypes\FlatRepository(
-            "$IP/extensions/GitAccess/vendor/dflydev-apache-mimetypes/mime.types"
+            $GLOBALS['IP'] . '/extensions/GitAccess/vendor/dflydev-apache-mimetypes/mime.types'
         );
         
         preg_match('~^.*\.(.[^\.]*)$~', $title->getDBkey(), $matches);
@@ -594,12 +596,15 @@ class GitTree extends AbstractGitObject
             'log_action',
             array('log_id' => $del_log_id)
         );
-        
-        if ($action = 'delete')
+        if ($action == 'delete')
         {
             return false;
         }
-        elseif ($action = 'restore')
+        elseif ($action == 'restore')
+        {
+            return true;
+        }
+        else
         {
             return true;
         }

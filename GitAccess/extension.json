@@ -68,10 +68,10 @@
         
         "FillMergeLogFieldsJob": "jobs/FillMergeLogFieldsJob.php",
         
-        "AbstractRepository": "vendor/dflydev-apache-mimetypes/AbstractRepository.php",
-        "FlatRepository": "vendor/dflydev-apache-mimetypes/FlatRepository.php",
-        "Parser": "vendor/dflydev-apache-mimetypes/Parser.php",
-        "RepositoryInterface": "vendor/dflydev/apache-mimetypes/RepositoryInterface.php"
+        "Dflydev\\ApacheMimeTypes\\AbstractRepository": "vendor/dflydev-apache-mimetypes/AbstractRepository.php",
+        "Dflydev\\ApacheMimeTypes\\FlatRepository": "vendor/dflydev-apache-mimetypes/FlatRepository.php",
+        "Dflydev\\ApacheMimeTypes\\Parser": "vendor/dflydev-apache-mimetypes/Parser.php",
+        "Dflydev\\ApacheMimeTypes\\RepositoryInterface": "vendor/dflydev-apache-mimetypes/RepositoryInterface.php"
     },
     "namespaces": [
         {

@@ -17,7 +17,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-abstract class AbstractGitObject
+interface IGitObject
+{
+    /**
+     * Parse/de-serialize a raw Git object, as perhaps sent in a packfile.
+     * 
+     * @param string $data The raw (but uncompressed) Git object to parse
+     */
+    public static function newFromData($data);
+}
+
+abstract class AbstractGitObject implements IGitObject
 {
     protected $dbw;
     protected $hash;
@@ -62,11 +72,4 @@ abstract class AbstractGitObject
         }
         return $binary ? $this->hash : bin2hex($this->hash);
     }
-    
-    /**
-     * Parse/de-serialize a raw Git object, as perhaps sent in a packfile.
-     * 
-     * @param string $data The raw (but uncompressed) Git object to parse
-     */
-    abstract public static function newFromData($data);
 }

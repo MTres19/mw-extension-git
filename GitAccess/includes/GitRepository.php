@@ -34,10 +34,10 @@ class GitRepository
     public function __construct()
     {
         $this->dbw = wfGetDB(DB_MASTER);
-        $this->blobs => array();
-        $this->trees => array();
-        $this->commits => array();
-        $this->tags => array();
+        $this->blobs = array();
+        $this->trees = array();
+        $this->commits = array();
+        $this->tags = array();
     }
     
     public function getHead()

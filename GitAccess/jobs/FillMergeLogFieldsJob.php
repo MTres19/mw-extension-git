@@ -33,6 +33,8 @@ class FillMergeLogFieldsJob extends Job
     
     public function run()
     {
+        $dbw = wfGetDB(DB_MASTER);
+        
         // Make page merge info available for querying
         $incomplete_merge_columns_result = $dbw->select(
             'logging',
