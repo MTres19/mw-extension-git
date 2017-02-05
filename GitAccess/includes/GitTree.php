@@ -79,7 +79,7 @@ class GitTree extends AbstractGitObject
             /* Make sure there's an entry in the array of subpage directories
              * that matches the containing part.
              */
-            if (!$subpages[$matches[1]]) { $subpages[$matches[1]] = array(); }
+            if (!isset($subpages[$matches[1]])) { $subpages[$matches[1]] = array(); }
             $new_entry = array(
                 'name' => $matches[2],
                 'type' => self::T_NORMAL_FILE,
@@ -94,7 +94,7 @@ class GitTree extends AbstractGitObject
         {
             $subpage_tree = new self();
             $subpage_tree->tree_data = $entry;
-            $subpage_tree->processSubpages();
+            $subpage_tree->processSubpages($ns_id);
             //Illegal characters and capitalization passes...?
             $subpage_tree->addToRepo();
             $subpage_tree_entry = array(
@@ -210,12 +210,23 @@ class GitTree extends AbstractGitObject
                 $media_tree->tree_data = array();
             }
             
-            $ns_tree = self::newFromNamespace(
-                $rev_id,
-                $log_id,
-                MWNamespace::getCanonicalIndex(strtolower($name)),
-                (($name == 'File') ? $media_tree : null)
-            );
+            if ($name == 'File')
+            {
+                $ns_tree = self::newFromNamespace(
+                    $rev_id,
+                    $log_id,
+                    MWNamespace::getCanonicalIndex(strtolower($name)),
+                    $media_tree
+                );
+            }
+            else
+            {
+                $ns_tree = self::newFromNamespace(
+                    $rev_id,
+                    $log_id,
+                    MWNamespace::getCanonicalIndex(strtolower($name))
+                );
+            }
             
             // Empty trees should not be included
             if ($ns_tree->tree_data)
