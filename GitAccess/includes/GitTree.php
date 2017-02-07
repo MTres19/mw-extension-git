@@ -553,8 +553,11 @@ class GitTree extends AbstractGitObject
      * but some pages like user CSS and JavaScript pages have their content
      * format fields based on the page name. It wouldn't make sense to have
      * User/MTres19/my_css.css.css, which is what you'd get without checking
-     * for existing file extensions. Of course, this should be skipped in the
-     * File namespace.
+     * for existing file extensions. Of course, this the file extension from
+     * the title can't necessarily be relied on. File description pages might
+     * end in ".png" but are actually wikitext. To guard against this, this
+     * function checks to make sure the content format given by MediaWiki
+     * matches the file extension.
      * 
      * @param TitleValue $title The title of page to find the file extension for
      * @param Revision $rev The revision to get the mimetype from if needed
@@ -570,10 +573,7 @@ class GitTree extends AbstractGitObject
         preg_match('~^.*\.(.[^\.]*)$~', $title->getDBkey(), $matches);
         $extFromTitle = !empty($matches[1]) ? $matches[1] : null;
         
-        if ($title->getNamespace() != NS_FILE
-            && $extFromTitle
-            && $mimeTypesRepo->findType($extFromTitle) === $rev->getContentFormat()
-        )
+        if ($extFromTitle && $mimeTypesRepo->findType($extFromTitle) === $rev->getContentFormat())
         {
             return '';
         }
