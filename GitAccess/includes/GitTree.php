@@ -390,7 +390,7 @@ class GitTree extends AbstractGitObject
          * 'archive'. However if the file is actually the current
          * version, getArchiveName() will return NULL.
          */
-        $fileIsOld = $file->getArchiveName() ? true : false;
+        $fileIsOld = is_null($file->getArchiveName()) ? false : true;
         if ($fileIsOld)
         {
             $path = $GLOBALS['IP'] . '/images/' . $file->getRel() . $file->getArchiveName();
@@ -570,7 +570,10 @@ class GitTree extends AbstractGitObject
         preg_match('~^.*\.(.[^\.]*)$~', $title->getDBkey(), $matches);
         $extFromTitle = !empty($matches[1]) ? $matches[1] : null;
         
-        if ($title->getNamespace() != NS_FILE && $extFromTitle && $mimeTypesRepo->findType($extFromTitle))
+        if ($title->getNamespace() != NS_FILE
+            && $extFromTitle
+            && $mimeTypesRepo->findType($extFromTitle) === $rev->getContentFormat()
+        )
         {
             return '';
         }
