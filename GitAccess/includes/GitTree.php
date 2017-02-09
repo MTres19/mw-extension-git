@@ -456,7 +456,7 @@ class GitTree extends AbstractGitObject
                 // Fetch the whole row
                 $merge_result_row = $dbw->selectRow('logging', '*', ['log_id' => $merge_result->log_id]);
                 
-                if (wfTimestamp(TS_MW, wfTimestamp(TS_UNIX, $revision->getTimestamp()) + 2) >= $merge_result_row->log_timestamp)
+                if ($revision->getTimestamp() >= $merge_result_row->log_timestamp)
                 {
                     /* The merge found happened before the revision, so the destination
                      * of the merge must be the title of the page. Later we'll search to
