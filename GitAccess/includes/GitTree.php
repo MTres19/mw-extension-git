@@ -566,6 +566,34 @@ class GitTree extends AbstractGitObject
      */
     public static function determineFileExt(TitleValue $title, Revision $rev)
     {
+        /* Search the logging table for content model changes. User CSS/JavaScript
+         * pages only store the content model in the page table, so when the content
+         * model is changed that's the end of it and Revision::getContentFormat() is
+         * inaccurate for older revisions.
+         */
+        $dbw = wfGetDB(DB_MASTER);
+        $contentModelChangeParams = $dbw->selectField(
+            'logging',
+            'MAX(log_params)',
+            array(
+                'log_type' => 'contentmodel',
+                'log_action' => 'change',
+                // Account for timestamp differences between tables (ugh) ↓
+                'log_timestamp <= ' . wfTimestamp(TS_MW, (wfTimestamp(TS_UNIX, $rev->getTimestamp()) + 2)),
+                'log_page' => $rev->getPage()
+            )
+        );
+        
+        if ($contentModelChangeParams)
+        {
+            $dbContentModel = LogEntryBase::extractParams($contentModelChangeParams)['5::newmodel'];
+            $dbContentFormat = ContentHandler::getForModelId($dbContentModel)->getDefaultFormat();
+        }
+        else
+        {
+            $dbContentFormat = $rev->getContentFormat();
+        }
+        
         $mimeTypesRepo = new Dflydev\ApacheMimeTypes\FlatRepository(
             $GLOBALS['IP'] . '/extensions/GitAccess/vendor/dflydev-apache-mimetypes/mime.types'
         );
@@ -573,13 +601,13 @@ class GitTree extends AbstractGitObject
         preg_match('~^.*\.(.[^\.]*)$~', $title->getDBkey(), $matches);
         $extFromTitle = !empty($matches[1]) ? $matches[1] : null;
         
-        if ($extFromTitle && $mimeTypesRepo->findType($extFromTitle) === $rev->getContentFormat())
+        if ($extFromTitle && $mimeTypesRepo->findType($extFromTitle) === $dbContentFormat)
         {
             return '';
         }
         else
         {
-            return '.' . $mimeTypesRepo->findExtensions($rev->getContentFormat())[0];
+            return '.' . $mimeTypesRepo->findExtensions($dbContentFormat)[0];
         }
     }
     
