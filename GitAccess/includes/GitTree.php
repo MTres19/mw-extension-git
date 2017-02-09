@@ -506,7 +506,8 @@ class GitTree extends AbstractGitObject
         // }}}
         
         $move_search_conds = array(
-            'log_timestamp <= ' . $revision->getTimestamp(),
+            // Account for timestamp differences between tables (ugh) ↓
+            'log_timestamp <= ' . wfTimestamp(TS_MW, (wfTimestamp(TS_UNIX, $revision->getTimestamp()) + 2)),
             'log_type' => 'move'
         );
         switch ($method)
@@ -617,6 +618,9 @@ class GitTree extends AbstractGitObject
      * 
      * @param TitleValue $title The title of the page to check
      * @param int $log_id The most recent log ID for the commit referencing this tree
+     * 
+     * @todo Should support timestamp-only search. (Don't forget to account for timestamp
+     * discrepencies.)
      */
     
     public static function pageExisted(TitleValue $title, $log_id)
