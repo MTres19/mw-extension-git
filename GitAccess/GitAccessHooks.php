@@ -69,6 +69,14 @@ class GitAccessHooks
             );
         }
         
+        if(!$dbUpdater->tableExists('git_commit_tracks'))
+        {
+            $dbUpdater->addExtensionTable(
+                'git_commit_tracks',
+                dirname(__FILE__) . '/sql/git_commit_tracks_schema_mysql.sql'
+            );
+        }
+        
         $dbUpdater->addExtensionField(
             'logging',
             'log_merge_destination',
