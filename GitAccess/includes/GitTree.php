@@ -380,33 +380,140 @@ class GitTree extends AbstractGitObject
      */
     public static function fetchFile(GitTree &$media_tree, Revision $revision, TitleValue $title)
     {
-        $file = RepoGroup::singleton()->getLocalRepo()->newFile(
-            $revision->getTitle(),
-            $revision->getTimestamp()
-        );
-        if (!$file) { return; }
-        /* newFile() always returns an OldLocalFile instance,
-         * so OldLocalFile::getRel() always returns a path containing
-         * 'archive'. However if the file is actually the current
-         * version, getArchiveName() will return NULL.
+        /* Filenames in the filearchive table don't get updated when the page is moved.
+         * Therefore, in order to build a proper list of files attached to the page,
+         * we'll search the logging table for deletion entries and run DB queries galore.
+         * That's what you get when the DB schema has grown organically over about a decade.
          */
-        $fileIsOld = is_null($file->getArchiveName()) ? false : true;
-        if ($fileIsOld)
+        $dbw = wfGetDB(DB_MASTER);
+        $filenames_result = $dbw->select(
+            'logging',
+            'log_title',
+            array(
+                'log_action' => 'delete',
+                'log_action' => 'delete',
+                'log_namespace' => NS_FILE,
+                'log_page' => $revision->getPage()
+            )
+        );
+        $file_names = array();
+        do
         {
-            $path = $GLOBALS['IP'] . '/images/' . $file->getRel() . $file->getArchiveName();
+            $row = $filenames_result->fetchRow();
+            if ($row)
+            {
+                array_push($file_names, $row['log_title']);
+            }
+        }
+        while ($row);
+        
+        $filequeriesSQL = array();
+        array_push($filequeriesSQL, $dbw->selectSQLText(
+            'filearchive',
+            array(
+                'is_filearchive' => '\'true\'',
+                'is_old' => '\'false\'',
+                'img_name' => 'fa_name',
+                'img_archive_name' => 'fa_archive_name',
+                'img_fa_storage_key' => 'fa_storage_key',
+                'img_media_type' => 'fa_media_type',
+                'img_timestamp' => 'fa_timestamp'
+            ),
+            array(
+                'fa_name IN (\''. implode('\',\'', $file_names) . '\')',
+                'fa_timestamp <= ' . wfTimestamp(TS_MW, wfTimestamp(TS_UNIX, $revision->getTimestamp()) + 2)
+            )
+        )
+        );
+        array_push($filequeriesSQL, $dbw->selectSQLText(
+            'oldimage',
+            array(
+                'is_filearchive' => '\'false\'',
+                'is_old' => '\'true\'',
+                'img_name' => 'oi_name',
+                'img_archive_name' => 'oi_archive_name',
+                'img_fa_storage_key' => 'NULL',
+                'img_media_type' => 'oi_media_type',
+                'img_timestamp' => 'oi_timestamp'
+            ),
+            array(
+                'oi_name' => $revision->getTitle()->getDBkey(),
+                'oi_timestamp <= ' . wfTimestamp(TS_MW, wfTimestamp(TS_UNIX, $revision->getTimestamp()) + 2)
+            )
+        )
+        );
+        array_push($filequeriesSQL, $dbw->selectSQLText(
+            'image',
+            array(
+                'is_filearchive' => '\'false\'',
+                'is_old' => '\'false\'',
+                'img_name',
+                'img_archive_name' => 'NULL',
+                'img_fa_storage_key' => 'NULL',
+                'img_media_type',
+                'img_timestamp'
+            ),
+            array(
+                'img_name' => $revision->getTitle()->getDBkey(),
+                'img_timestamp <= ' . wfTimestamp(TS_MW, wfTimestamp(TS_UNIX, $revision->getTimestamp()) + 2)
+            )
+        )
+        );
+        $img_result = $dbw->query($dbw->unionQueries($filequeriesSQL, false));
+        
+        $latest_img = null;
+        $current_max = 20031208000000; /* Semi-arbitrary. It's actually MW 1.1's release date. Not that this extension will 
+                                        * probably work with a DB that old.
+                                        */
+        do
+        {
+            $row = $img_result->fetchRow();
+            if ($row)
+            {
+                if ($row['img_timestamp'] > $current_max)
+                {
+                    $current_max = $row['img_timestamp'];
+                    $latest_img = $row;
+                }
+            }
+        }
+        while ($row);
+        
+        if ($latest_img['is_filearchive'] === 'true')
+        {
+            $img_path = $GLOBALS['IP']
+            . '/images/deleted/'
+            . substr($latest_img['img_fa_storage_key'], 0, 1) . '/'
+            . substr($latest_img['img_fa_storage_key'], 1, 1) . '/'
+            . substr($latest_img['img_fa_storage_key'], 2, 1) . '/'
+            . $latest_img['img_fa_storage_key'];
+        }
+        elseif ($latest_img['is_old'] === 'true')
+        {
+            $img_name_hash = hash('md5', $latest_img['img_name']);
+            $img_path = $GLOBALS['IP']
+            . '/images/archive'
+            . substr($img_name_hash, 0, 1) . '/'
+            . substr($img_name_hash, 0, 2) . '/'
+            . $latest_img['img_archive_name'];
         }
         else
         {
-            preg_match('~^archive\\/(.*)$~', $file->getRel(), $matches);
-            $path = $GLOBALS['IP'] . '/images/' . $matches[1] . $file->getName();
+            $img_name_hash = hash('md5', $latest_img['img_name']);
+            $img_path = $GLOBALS['IP']
+            . '/images/'
+            . substr($img_name_hash, 0, 1) . '/'
+            . substr($img_name_hash, 0, 2) . '/'
+            . $latest_img['img_name'];
         }
+        
         $blob = GitBlob::newFromRaw(file_get_contents($path));
         $blob->addToRepo();
         
         array_push(
             $media_tree->tree_data,
             array(
-                'type' => ($file->getMediaType == MEDIATYPE_EXECUTABLE)
+                'type' => ($latest_img['img_media_type'] == MEDIATYPE_EXECUTABLE)
                             ? self::T_EXEC_FILE
                             : self::T_NORMAL_FILE,
                 'name' => $title->getDBkey(),
