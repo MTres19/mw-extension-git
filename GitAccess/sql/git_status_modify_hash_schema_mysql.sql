@@ -1,7 +1,6 @@
 -- git_status_modify_hash table
 -- 
--- Used to log changes to page status (i.e. moving and deleting) as
--- well as file uploads and deletions.
+-- Used to log changes to page status (i.e. deletions)
 -- 
 -- These aren't stored as edits and therefore can't be automatically
 -- generated on-the-fly. (Note that pages in the File namespace are
