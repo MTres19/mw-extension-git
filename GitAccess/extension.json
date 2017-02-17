@@ -48,6 +48,15 @@
         ],
         "ArticleMergeComplete": [
             "GitAccessHooks::onArticleMergeComplete"
+        ],
+        "ListDefinedTags": [
+            "GitAccessHooks::onChangeTagRegistration"
+        ],
+        "ChangeTagsListActive": [
+            "GitAccessHooks::onChangeTagRegistration"
+        ],
+        "ChangeTagsCanCreate": [
+            "GitAccessHooks::onChangeTagCanCreate"
         ]
     },
     "JobClasses": {

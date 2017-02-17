@@ -86,9 +86,63 @@ class GitAccessHooks
         return true;
     }
     
+    /**
+     * Function for hook ArticleMergeComplete. Updates the additional loggging
+     * table fields with data from log_params so that it can be queried.
+     * 
+     * @param Title $targetTitle The source title of the merge. It doesn't
+     * really matter for the job this adds to the queue.
+     * @param Title $destTitle The destination title of the merge. It doesn't
+     * really matter for the job this adds to the queue.
+     */
     public static function onArticleMergeComplete($targetTitle, $destTitle)
     {
         $job = new FillMergeLogFieldsJob($destTitle, array());
         JobQueueGroup::singleton()->push($job);
+    }
+    
+    /**
+     * Checks to make sure a user doesn't overwrite the tags that GitAccess
+     * needs to reserve.
+     * 
+     * @param string $tag The tag name
+     * @param User $user The user attempting to create a tag. Unneeded and may be null.
+     * @param Status &$status The Status object of this tag creation action.
+     */
+    public static function onChangeTagCanCreate($tag, $user, &$status)
+    {
+        if (preg_match('~^git-track-.[0-9a-fA-F]{39}$~', $tag) === 1)
+        {
+            $status->fatal('gitaccess-error-reservedchangetag');
+        }
+    }
+    
+    /**
+     * Registers the change tags currently in use by GitAccess.
+     * Used for both ListDefinedTags and ChangeTagsListActive.
+     * 
+     * @param array &$tags Array of valid tags
+     */
+    public static function onChangeTagRegistration(&$tags)
+    {
+        $dbw = wfGetDB(DB_MASTER);
+        $result = $dbw->select(
+            'git_commit_tracks',
+            'associated_tag',
+            array(),
+            __METHOD__,
+            array(
+                'DISTINCT' => true
+            )
+        );
+        do
+        {
+            $row = $result->fetchRow()
+            if ($row)
+            {
+                array_push($tags, $row['associated_tag']);
+            }
+        }
+        while ($row);
     }
 }       
