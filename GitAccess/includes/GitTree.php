@@ -275,7 +275,8 @@ class GitTree extends AbstractGitObject
         $dbw = wfGetDB(DB_MASTER);
         
         /* {{{ SQL stuff */
-        $sql = $dbw->selectSQLText(
+		$sqls = array();
+        array_push($sqls, $dbw->selectSQLText(
             array('page', 'revision'),
             array(
                 'is_archive' => '\'false\'',
@@ -294,9 +295,8 @@ class GitTree extends AbstractGitObject
             array(
                 'revision' => array('INNER JOIN', 'page_id = rev_page')
             )
-        );
-        $sql .= ' UNION ';
-        $sql .= $dbw->selectSQLText(
+        ));
+        array_push($sqls, $dbw->selectSQLText(
             'archive',
             array(
                 'is_archive' => '\'true\'',
@@ -312,7 +312,8 @@ class GitTree extends AbstractGitObject
             array(
                 'GROUP BY' => array('\'true\'', 'ar_page_id', 'ar_namespace')
             )
-        );
+        ));
+		$sql = $dbw->unionQueries($sqls, false);
         $result = $dbw->query($sql);
         /* }}}  End SQL stuff*/
         

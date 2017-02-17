@@ -41,7 +41,8 @@ class GitCommit extends AbstractGitObject
     
     protected function populateIdsFromRevision()
     {
-        $linked_rev_result = $this->dbw->select(
+		$dbw = wfGetDB(DB_MASTER);
+        $linked_rev_result = $dbw->select(
             'git_edit_hash',
             'affected_rev_id',
             array('commit_hash' => $this->commit_hash)
@@ -61,7 +62,8 @@ class GitCommit extends AbstractGitObject
     
     protected function populateIdsFromLogging()
     {
-        $linked_log_result = $this->dbw->select(
+		$dbw = wfGetDB(DB_MASTER);
+        $linked_log_result = $dbw->select(
             'git_status_modify_hash',
             'log_id',
             array('commit_hash' => $this->commit_hash)
@@ -197,29 +199,31 @@ class GitCommit extends AbstractGitObject
     public static function newFromRevId($id, $previous_log_id)
     {
         $instance = new self();
-        
-        $sql = $this->dbw-selectSQLText(
+        $dbw = wfGetDB(DB_MASTER);
+		
+		$sqls = array();
+        array_push($sqls, $dbw->selectSQLText(
             'revision',
             array(
                 'ar_id' => 'NULL',
                 'rev_id' => 'rev_id'
             ),
             'rev_id = ' . $id
-        );
-        $sql .= ' UNION ';
-        $sql .= $this->dbw->selectSQLText(
+        ));
+        array_push($sqls, $dbw->selectSQLText(
             'archive',
             array(
                 'ar_id' => 'ar_id',
                 'rev_id' => 'ar_rev_id'
             ),
             'ar_rev_id = ' . $id
-        );
-        $row = $this->dbw->query($sql)->fetchObject();
+        ));
+		$sql = $dbw->unionQueries($sqls, false);
+        $row = $dbw->query($sql)->fetchObject();
         
         $revision = $row->ar_id
                         ? Revision::newFromArchiveRow(
-                            $this->dbw->selectRow(
+                            $dbw->selectRow(
                                 'archive',
                                 '*',
                                 'ar_rev_id = ' . $id

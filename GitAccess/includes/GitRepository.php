@@ -178,7 +178,8 @@ class GitRepository
         $this->setHeadLogId();
         $dbw = wfGetDB(DB_MASTER);
         
-        $sql = $dbw->selectSQLText(
+		$sqls = array();
+        $sqls[] = $dbw->selectSQLText(
             'revision',
             array(
                 'rev_id' => 'rev_id',
@@ -187,8 +188,7 @@ class GitRepository
             ),
             'rev_id > ' . $this->HEAD_rev_id
         );
-        $sql .= ' UNION ';
-        $sql .= $dbw->selectSQLText(
+        $sqls[] = $dbw->selectSQLText(
             'archive',
             array(
                 'rev_id' => 'ar_rev_id',
@@ -197,8 +197,7 @@ class GitRepository
             ),
             'ar_rev_id > ' . $this->HEAD_rev_id
         );
-        $sql .= ' UNION ';
-        $sql .= $dbw->selectSQLText(
+        $sqls[] = $dbw->selectSQLText(
             'logging',
             array(
                 'rev_id' => 'NULL',
@@ -216,6 +215,7 @@ class GitRepository
             )
         );
         
+		$sql = $dbw->unionQueries($sqls, false);
         $result = $dbw->query($sql);
         
         /* In order to generate a tree and commit, the GitTree class
