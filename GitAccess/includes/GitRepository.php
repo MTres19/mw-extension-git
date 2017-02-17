@@ -27,13 +27,10 @@ class GitRepository
     public $HEAD_log_id;
     public $HEAD_rev_id;
     
-    private $dbw;
-    
     public static $instance = null;
     
     public function __construct()
     {
-        $this->dbw = wfGetDB(DB_MASTER);
         $this->blobs = array();
         $this->trees = array();
         $this->commits = array();
@@ -179,8 +176,9 @@ class GitRepository
         $this->getHead();
         $this->setHeadRevId();
         $this->setHeadLogId();
+        $dbw = wfGetDB(DB_MASTER);
         
-        $sql = $this->dbw->selectSQLText(
+        $sql = $dbw->selectSQLText(
             'revision',
             array(
                 'rev_id' => 'rev_id',
@@ -190,7 +188,7 @@ class GitRepository
             'rev_id > ' . $this->HEAD_rev_id
         );
         $sql .= ' UNION ';
-        $sql .= $this->dbw->selectSQLText(
+        $sql .= $dbw->selectSQLText(
             'archive',
             array(
                 'rev_id' => 'ar_rev_id',
@@ -200,7 +198,7 @@ class GitRepository
             'ar_rev_id > ' . $this->HEAD_rev_id
         );
         $sql .= ' UNION ';
-        $sql .= $this->dbw->selectSQLText(
+        $sql .= $dbw->selectSQLText(
             'logging',
             array(
                 'rev_id' => 'NULL',
@@ -218,7 +216,7 @@ class GitRepository
             )
         );
         
-        $result = $this->dbw->query($sql);
+        $result = $dbw->query($sql);
         
         /* In order to generate a tree and commit, the GitTree class
          * needs to know the most current (relevant) log id at the time
@@ -263,7 +261,8 @@ class GitRepository
     
     public function populateFromJournal()
     {
-        $result = $this->dbw->select('git_hash', 'commit_hash');
+        $dbw = wfGetDB(DB_MASTER);
+        $result = $dbw->select('git_hash', 'commit_hash');
         do
         {
             $row = $result->fetchRow();

@@ -29,7 +29,6 @@ interface IGitObject
 
 abstract class AbstractGitObject implements IGitObject
 {
-    protected $dbw;
     protected $hash;
     protected $repo;
     
@@ -54,7 +53,6 @@ abstract class AbstractGitObject implements IGitObject
     public function __construct()
     {
         $this->repo = &GitRepository::singleton();
-        $this->dbw = wfGetDB(DB_MASTER);
     }
     
     /**
