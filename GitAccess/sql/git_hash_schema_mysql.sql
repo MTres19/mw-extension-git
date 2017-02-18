@@ -36,5 +36,33 @@ CREATE TABLE IF NOT EXISTS /*_*/git_hash(
     -- Git never walks forward in a commit history, because it's very difficult
     -- to find child commits. By storing the HEAD commit, it's simple to walk
     -- backward through the parents.
-    is_head BOOLEAN
+    is_head BOOLEAN,
+    
+    -- The GitAccess_root:Aliases page's revision ID for this commit. Storing this
+    -- here makes it immensely simpler than trying to figure out which revision ID
+    -- is the Aliases page from the git_edit_hash table. NULL if unneeded.
+    aliases_rev_id INTEGER,
+    
+    -- Allows pushing commits with multiple parents to the wiki.
+    -- Example diagram
+    -- 
+    -- master [Commit A] --> [Commit B] --> [Commit C] --> [Commit D]
+    --                \                                     ^
+    --                 \                                   /
+    -- fork             \--> [Commit 1] --> [Commit 2] ---/
+    -- 
+    -- The problem is that all those commits need corresponding MediaWiki
+    -- revisions. MediaWiki has no concept of revisions having multiple
+    -- parents, so what this table does is store a map of commits to change
+    -- tags. Change tags have the format git-branch-tracker-<SHA-1 of first commit>.
+    -- 
+    -- This field stores the hash of the farthest back parent commit that
+    -- "split off" from the main branch. (Which branch is the "main" branch
+    -- is arbitrarily chosen because commits aren't tied to a specific branch.)
+    -- For commits added from the revision log, this field will be the same
+    -- as that of what was the current HEAD commit at the time. For commits
+    -- pushed from a Git client, the history will have to be examined to determine
+    -- the track. For the very first default revision, this will be the same as
+    -- the commit hash.
+    commit_track VARBINARY(40)
 )/*$wgDBTableOptions*/;
