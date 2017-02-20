@@ -463,8 +463,9 @@ class GitTree extends AbstractGitObject
         $img_result = $dbw->query($dbw->unionQueries($filequeriesSQL, false));
         
         $latest_img = null;
-        $current_max = 20031208000000; /* Semi-arbitrary. It's actually MW 1.1's release date. Not that this extension will 
-                                        * probably work with a DB that old.
+        $current_max = 20031208000000; /* Semi-arbitrary. It's actually MW 1.1's
+                                        * release date. Not that this extension
+                                        * will probably work with a DB that old.
                                         */
         do
         {
@@ -482,8 +483,8 @@ class GitTree extends AbstractGitObject
         
         if ($latest_img['is_filearchive'] === 'true')
         {
-            $img_path = $GLOBALS['IP']
-            . '/images/deleted/'
+            $img_path = $GLOBALS['wgDeletedDirectory']
+            . '/'
             . substr($latest_img['img_fa_storage_key'], 0, 1) . '/'
             . substr($latest_img['img_fa_storage_key'], 1, 1) . '/'
             . substr($latest_img['img_fa_storage_key'], 2, 1) . '/'
@@ -492,8 +493,8 @@ class GitTree extends AbstractGitObject
         elseif ($latest_img['is_old'] === 'true')
         {
             $img_name_hash = hash('md5', $latest_img['img_name']);
-            $img_path = $GLOBALS['IP']
-            . '/images/archive'
+            $img_path = $GLOBALS['wgUploadDirectory']
+            . '/archive/'
             . substr($img_name_hash, 0, 1) . '/'
             . substr($img_name_hash, 0, 2) . '/'
             . $latest_img['img_archive_name'];
@@ -501,8 +502,8 @@ class GitTree extends AbstractGitObject
         else
         {
             $img_name_hash = hash('md5', $latest_img['img_name']);
-            $img_path = $GLOBALS['IP']
-            . '/images/'
+            $img_path = $GLOBALS['wgUploadDirectory']
+            . '/'
             . substr($img_name_hash, 0, 1) . '/'
             . substr($img_name_hash, 0, 2) . '/'
             . $latest_img['img_name'];
