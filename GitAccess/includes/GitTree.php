@@ -481,47 +481,50 @@ class GitTree extends AbstractGitObject
         }
         while ($row);
         
-        if ($latest_img['is_filearchive'] === 'true')
+        if ($latest_img)
         {
-            $img_path = $GLOBALS['wgDeletedDirectory']
-            . '/'
-            . substr($latest_img['img_fa_storage_key'], 0, 1) . '/'
-            . substr($latest_img['img_fa_storage_key'], 1, 1) . '/'
-            . substr($latest_img['img_fa_storage_key'], 2, 1) . '/'
-            . $latest_img['img_fa_storage_key'];
+            if ($latest_img['is_filearchive'] === 'true')
+            {
+                $img_path = $GLOBALS['wgDeletedDirectory']
+                . '/'
+                . substr($latest_img['img_fa_storage_key'], 0, 1) . '/'
+                . substr($latest_img['img_fa_storage_key'], 1, 1) . '/'
+                . substr($latest_img['img_fa_storage_key'], 2, 1) . '/'
+                . $latest_img['img_fa_storage_key'];
+            }
+            elseif ($latest_img['is_old'] === 'true')
+            {
+                $img_name_hash = hash('md5', $latest_img['img_name']);
+                $img_path = $GLOBALS['wgUploadDirectory']
+                . '/archive/'
+                . substr($img_name_hash, 0, 1) . '/'
+                . substr($img_name_hash, 0, 2) . '/'
+                . $latest_img['img_archive_name'];
+            }
+            else
+            {
+                $img_name_hash = hash('md5', $latest_img['img_name']);
+                $img_path = $GLOBALS['wgUploadDirectory']
+                . '/'
+                . substr($img_name_hash, 0, 1) . '/'
+                . substr($img_name_hash, 0, 2) . '/'
+                . $latest_img['img_name'];
+            }
+            
+            $blob = GitBlob::newFromRaw(file_get_contents($path));
+            $blob->addToRepo();
+            
+            array_push(
+                $media_tree->tree_data,
+                array(
+                    'type' => ($latest_img['img_media_type'] == MEDIATYPE_EXECUTABLE)
+                                ? self::T_EXEC_FILE
+                                : self::T_NORMAL_FILE,
+                    'name' => $title->getDBkey(),
+                    'object' => &$blob
+                )
+            );
         }
-        elseif ($latest_img['is_old'] === 'true')
-        {
-            $img_name_hash = hash('md5', $latest_img['img_name']);
-            $img_path = $GLOBALS['wgUploadDirectory']
-            . '/archive/'
-            . substr($img_name_hash, 0, 1) . '/'
-            . substr($img_name_hash, 0, 2) . '/'
-            . $latest_img['img_archive_name'];
-        }
-        else
-        {
-            $img_name_hash = hash('md5', $latest_img['img_name']);
-            $img_path = $GLOBALS['wgUploadDirectory']
-            . '/'
-            . substr($img_name_hash, 0, 1) . '/'
-            . substr($img_name_hash, 0, 2) . '/'
-            . $latest_img['img_name'];
-        }
-        
-        $blob = GitBlob::newFromRaw(file_get_contents($path));
-        $blob->addToRepo();
-        
-        array_push(
-            $media_tree->tree_data,
-            array(
-                'type' => ($latest_img['img_media_type'] == MEDIATYPE_EXECUTABLE)
-                            ? self::T_EXEC_FILE
-                            : self::T_NORMAL_FILE,
-                'name' => $title->getDBkey(),
-                'object' => &$blob
-            )
-        );
     }
     
     /**
