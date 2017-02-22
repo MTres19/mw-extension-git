@@ -753,6 +753,13 @@ class GitTree extends AbstractGitObject
         );
         if ($action == 'delete')
         {
+            /* TODO: if this is a file page, make sure that the deletion of a
+             * single file version doesn't result in deletion of the page.
+             * 
+             * There might be a convoluted way of figuring it out from the
+             * filearchive table, but it's probably not worth it. Instead,
+             * maybe match a system message. :/
+             */
             return false;
         }
         elseif ($action == 'restore')
