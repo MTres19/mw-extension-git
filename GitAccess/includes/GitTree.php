@@ -345,7 +345,8 @@ class GitTree extends AbstractGitObject
                 
                 $titleValue = self::getTitleAtRevision($revision, $log_id);
                 
-                if (self::pageExisted($titleValue, $revision, $log_id))
+                $existed = self::pageExisted($titleValue, $revision, $log_id);
+                if ($existed)
                 {
                     $blob = GitBlob::newFromRaw($revision->getContent(Revision::RAW)->serialize());
                     $blob->addToRepo();
@@ -360,7 +361,14 @@ class GitTree extends AbstractGitObject
                     
                     unset($blob); // Avoid overwriting the reference on next iteration
                     
-                    if ($ns_id == NS_FILE) { self::fetchFile($media_tree, $revision, $titleValue); }
+                    if ($ns_id == NS_FILE && $existed === true)
+                    {
+                        self::fetchFile($media_tree, $revision, $titleValue);
+                    }
+                    elseif ($ns_id == NS_FILE && $existed !== false)
+                    {
+                        self::fetchFile($media_tree, $revision, $titleValue, $existed);
+                    }
                 }
             }
         }
@@ -378,8 +386,16 @@ class GitTree extends AbstractGitObject
      * @param GitTree &$media_tree The GitTree used to add the file to
      * @param Revision $revision The revision of the page in the File namespace
      * @param TitleValue $title The time-dependent title of the revision (see GitTree::getTitleAtRevision())
+     * @param string $min_timestamp The oldest a file is permitted to be to be included.
+     * Useful if a file page is created with the same title as a previously deleted page
+     * but doesn't have a corresponding file uploaded.
      */
-    public static function fetchFile(GitTree &$media_tree, Revision $revision, TitleValue $title)
+    public static function fetchFile(
+        GitTree &$media_tree,
+        Revision $revision,
+        TitleValue $title,
+        $min_timestamp = '00000000000000'
+    )
     {
         /* Filenames in the filearchive table don't get updated when the page is moved.
          * Therefore, in order to build a proper list of files attached to the page,
@@ -422,7 +438,8 @@ class GitTree extends AbstractGitObject
             ),
             array(
                 'fa_name IN (\''. implode('\',\'', $file_names) . '\')',
-                'fa_timestamp <= ' . wfTimestamp(TS_MW, wfTimestamp(TS_UNIX, $revision->getTimestamp()) + 2)
+                'fa_timestamp <= ' . wfTimestamp(TS_MW, wfTimestamp(TS_UNIX, $revision->getTimestamp()) + 2),
+                'fa_timestamp >= ' . $min_timestamp
             )
         )
         );
@@ -439,7 +456,8 @@ class GitTree extends AbstractGitObject
             ),
             array(
                 'oi_name' => $revision->getTitle()->getDBkey(),
-                'oi_timestamp <= ' . wfTimestamp(TS_MW, wfTimestamp(TS_UNIX, $revision->getTimestamp()) + 2)
+                'oi_timestamp <= ' . wfTimestamp(TS_MW, wfTimestamp(TS_UNIX, $revision->getTimestamp()) + 2),
+                'oi_timestamp >= ' . $min_timestamp
             )
         )
         );
@@ -456,7 +474,8 @@ class GitTree extends AbstractGitObject
             ),
             array(
                 'img_name' => $revision->getTitle()->getDBkey(),
-                'img_timestamp <= ' . wfTimestamp(TS_MW, wfTimestamp(TS_UNIX, $revision->getTimestamp()) + 2)
+                'img_timestamp <= ' . wfTimestamp(TS_MW, wfTimestamp(TS_UNIX, $revision->getTimestamp()) + 2),
+                'img_timestamp >= ' . $min_timestamp
             )
         )
         );
@@ -731,7 +750,12 @@ class GitTree extends AbstractGitObject
      * @param TitleValue $title The title of the page to check
      * @param Revision $rev The revision being checked.
      * @param int $log_id The most recent log ID for the commit referencing this tree
+     * @return bool|string Returns true if the page existed, false if it did not, or the
+     * 14-character timestamp of the page deletion if it existed but was created with
+     * the same title as a previously deleted page.
      * 
+     * @note This function returns a boolean value, but also non-boolean values that
+     * evaluate to true. Use strict comparison (===) if needed.
      * @todo Should support timestamp-only search. (Don't forget to account for timestamp
      * discrepencies.)
      */
@@ -759,10 +783,12 @@ class GitTree extends AbstractGitObject
         {
             /* If this page was deleted, but a new page was then created
              * with the same title, this function should return true.
+             * By returning the deletion timestamp, we can signal that
+             * files older than the deletion time should not be included.
              */
             if ($rev->getTimestamp() > $del_log_row['log_timestamp'])
             {
-                return true;
+                return $del_log_row['log_timestamp'];
             }
             
             /* If this is a file page, make sure that the deletion of a
