@@ -345,7 +345,7 @@ class GitTree extends AbstractGitObject
                 
                 $titleValue = self::getTitleAtRevision($revision, $log_id);
                 
-                if (self::pageExisted($titleValue, $log_id))
+                if (self::pageExisted($titleValue, $revision, $log_id))
                 {
                     $blob = GitBlob::newFromRaw($revision->getContent(Revision::RAW)->serialize());
                     $blob->addToRepo();
@@ -729,13 +729,14 @@ class GitTree extends AbstractGitObject
      * (Whether it should appear in the tree)
      * 
      * @param TitleValue $title The title of the page to check
+     * @param Revision $rev The revision being checked.
      * @param int $log_id The most recent log ID for the commit referencing this tree
      * 
      * @todo Should support timestamp-only search. (Don't forget to account for timestamp
      * discrepencies.)
      */
     
-    public static function pageExisted(TitleValue $title, $log_id)
+    public static function pageExisted(TitleValue $title, Revision $rev, $log_id)
     {
         $dbw = wfGetDB(DB_MASTER);
         $del_log_id = $dbw->selectField(
@@ -745,17 +746,25 @@ class GitTree extends AbstractGitObject
                 'log_id <= ' . $log_id,
                 'log_type' => 'delete',
                 'log_namespace' => $title->getNamespace(),
-                'log_title' => $title->getDBkey()
+                'log_title' => $title->getDBkey() // Can't use page ID, could be different after undeletion
             )
         );
         
         $del_log_row = $dbw->selectRow(
             'logging',
-            ['log_action', 'log_params'],
+            ['log_action', 'log_timestamp', 'log_params'],
             array('log_id' => $del_log_id)
         );
         if ($del_log_row['log_action'] == 'delete')
         {
+            /* If this page was deleted, but a new page was then created
+             * with the same title, this function should return true.
+             */
+            if ($rev->getTimestamp() > $del_log_row['log_timestamp'])
+            {
+                return true;
+            }
+            
             /* If this is a file page, make sure that the deletion of a
              * single file version doesn't result in deletion of the page.
              * 
