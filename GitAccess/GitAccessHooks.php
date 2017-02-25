@@ -145,4 +145,42 @@ class GitAccessHooks
         }
         while ($row);
     }
+    
+    /**
+     * Records the archive name (i.e. YYYYMMDDHHMMSS!FileName)
+     * of file revisions that are deleted separate from the entire
+     * page. This way GitAccess doesn't have to rely on matching
+     * the deletedrevision system message to know whether or not
+     * the description page was deleted too.
+     * 
+     * @param LocalFile $file The name of the file that was deleted (Current version,
+     * not the deleted version)
+     * @param string $oldimage The archive name of the deleted file.
+     * (filearchive.fa_archive_name)
+     * @param WikiFilePage $article The file description page
+     * @param User $user The user that performed the file deletion
+     * @param string $reason The given deletion reason
+     */
+    public static function onFileDeleteComplete($file, $oldimage, $article, $user, $reason)
+    {
+        if ($oldimage === '') { return; } // Entire page was deleted
+        
+        $dbw = wfGetDB(DB_MASTER);
+        $log_id = $dbw->selectField(
+            'logging',
+            'MAX(log_id)',
+            array(
+                'log_action' => '\'delete\'',
+                'log_page' => $article->getTitle()->getArticleId()
+            )
+        );
+        // Work around T155064, and be nice in case someone else uses this field
+        $params = unserialize($dbw->selectField('logging', 'log_params', ['log_id' => $log_id]));
+        $params['4::deletedname'] = $oldimage;
+        $dbw->update(
+            'logging',
+            ['log_params' => serialize($params)],
+            ['log_id' => $log_id]
+        );
+    }
 }       

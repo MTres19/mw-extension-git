@@ -749,23 +749,31 @@ class GitTree extends AbstractGitObject
             )
         );
         
-        $action = $dbw->selectField(
+        $del_log_row = $dbw->selectRow(
             'logging',
-            'log_action',
+            ['log_action', 'log_params'],
             array('log_id' => $del_log_id)
         );
-        if ($action == 'delete')
+        if ($del_log_row['log_action'] == 'delete')
         {
-            /* TODO: if this is a file page, make sure that the deletion of a
+            /* If this is a file page, make sure that the deletion of a
              * single file version doesn't result in deletion of the page.
              * 
              * There might be a convoluted way of figuring it out from the
              * filearchive table, but it's probably not worth it. Instead,
-             * maybe match a system message. :/
+             * match a system message. :/
              */
-            return false;
+            $job = new IdentifyFileRevisionDeletionsJob();
+            $job->run();
+            
+            if (isset(unserialize($del_log_row['log_params'])['4::deletedname'])
+            {
+                // Just a file revision was deleted
+                return true;
+            }
+            else { return false; }
         }
-        elseif ($action == 'restore')
+        elseif ($del_log_row['log_action'] == 'restore')
         {
             return true;
         }

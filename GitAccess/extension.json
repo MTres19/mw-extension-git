@@ -60,7 +60,8 @@
         ]
     },
     "JobClasses": {
-        "fillMergeLogFields": "FillMergeLogFieldsJob"
+        "fillMergeLogFields": "FillMergeLogFieldsJob",
+        "identifyFileRevisionDeletions": "IdentifyFileRevisionDeletionsJob"
     },
     "AutoloadClasses": {
         "SpecialGitAccess": "SpecialGitAccess.php",
@@ -76,6 +77,7 @@
         "GitTree": "includes/GitTree.php",
         
         "FillMergeLogFieldsJob": "jobs/FillMergeLogFieldsJob.php",
+        "IdentifyFileRevisionDeletionsJob": "jobs/IdentifyFileRevisionDeletionsJob.php",
         
         "Dflydev\\ApacheMimeTypes\\AbstractRepository": "vendor/dflydev-apache-mimetypes/AbstractRepository.php",
         "Dflydev\\ApacheMimeTypes\\FlatRepository": "vendor/dflydev-apache-mimetypes/FlatRepository.php",
