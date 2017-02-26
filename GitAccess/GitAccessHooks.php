@@ -208,4 +208,59 @@ class GitAccessHooks
             ['log_id' => $undelete_log_id]
         );
     }
-}       
+    
+    /**
+     * Captures the list of deleted files before they're removed from
+     * the filearchive table and stores it in a global variable. (*shudder*)
+     * 
+     * @param PageArchive &$archive The PageArchive object representing the deleted page
+     * @param Title $title The title object of the deleted page (unneeded in this case)
+     */
+    public static function onUndeleteFormUndelete(PageArchive &$archive, Title $title)
+    {
+        $GLOBALS['wgGitAccessFileUndeleteHooksFiles'] = $archive->listFiles; // *wince*
+    }
+    
+    /**
+     * Stores the list of undeleted file revisions in the log_params field.
+     * 
+     * @param Title $title The title object of the page that was undeleted
+     * @param array $restoredVersions Array of keys to the filearchive table that were restored
+     * @param User $user The user that performed the undeletion
+     * @param string $reason The reason for undeletion given by the user
+     */
+    public static function onFileUndeleteComplete(Title $title, $restoredVersions, User $user, $reason)
+    {
+        $result = $GLOBALS['wgGitAccessFileUndeleteHooksFiles']; // ugh
+        $files = array();
+        do
+        {
+            $row = $result->fetchRow();
+            if ($row)
+            {
+                $files[$row['fa_id']] = $row;
+            }
+        }
+        while ($row);
+        
+        $restoredFiles = array()
+        foreach ($restoredVersions as $version)
+        {
+            $restoredFiles[] = $files[$version]['fa_archive_name'];
+        }
+        
+        $dbw = wfGetDB(DB_MASTER);
+        $log_id = $dbw->selectField(
+            'logging',
+            'MAX(log_id)',
+            array(
+                'log_type' => 'delete',
+                'log_action' => 'restore',
+                'log_page' => $title->getArticleId()
+            )
+        );
+        $log_params = unserialize($dbw->selectField('logging', 'log_params', ['log_id' => $log_id]));
+        $log_params['5::restoredfiles'] = $restoredFiles;
+        $dbw->update('logging', ['log_params' => serialize($log_params)], ['log_id' => $log_id]);
+    }
+}

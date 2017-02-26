@@ -57,6 +57,18 @@
         ],
         "ChangeTagsCanCreate": [
             "GitAccessHooks::onChangeTagCanCreate"
+        ],
+        "FileDeleteComplete": [
+            "GitAccessHooks::onFileDeleteComplete"
+        ],
+        "ArticleRevisionUndeleted": [
+            "GitAccessHooks::onArticleRevisionUndeleted"
+        ],
+        "UndeletForm::undelete": [
+            "GitAccessHooks::onUndeleteFormUndelete"
+        ],
+        "FileUndeleteComplete": [
+            "GitAccessHooks::onFileUndeleteComplete"
         ]
     },
     "JobClasses": {
