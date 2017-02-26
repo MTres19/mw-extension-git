@@ -162,7 +162,7 @@ class GitAccessHooks
             'logging',
             'MAX(log_id)',
             array(
-                'log_action' => '\'delete\'',
+                'log_action' => 'delete',
                 'log_page' => $article->getTitle()->getArticleId()
             )
         );
@@ -173,6 +173,39 @@ class GitAccessHooks
             'logging',
             ['log_params' => serialize($params)],
             ['log_id' => $log_id]
+        );
+    }
+    
+    /**
+     * Store the restored revisions in log_params so that the latest shown
+     * revision in Git can be whatever the newest restored revision was.
+     * 
+     * @param Title $title The title of the restored page
+     * @param Revision $revision The restored revision
+     * @param string|int $oldPageID The page ID from the archive table.
+     * Sometimes MediaWiki will be able to restore a page with its original ID,
+     * but not always.
+     */
+    public static function onArticleRevisionUndeleted(Title $title, Revision $revision, $oldPageID)
+    {
+        $dbw = wfGetDB(DB_MASTER);
+        static $rev_ids = array();
+        static $undelete_log_id = $dbw->selectField(
+            'logging',
+            'MAX(log_id)',
+            array(
+                'log_page' => $title->getArticleId(),
+                'log_type' => 'delete',
+                'log_action' => 'restore'
+            )
+        );
+        $rev_ids[] = $revision->getId()
+        $log_params = unserialize($dbw->selectField('logging', 'log_params', ['log_id' => $undelete_log_id]));
+        $log_params['4::restoredrevs'] = $rev_ids;
+        $dbw->update(
+            'logging',
+            ['log_params' => serialize($log_params)],
+            ['log_id' => $undelete_log_id]
         );
     }
 }       

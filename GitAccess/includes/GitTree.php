@@ -437,7 +437,7 @@ class GitTree extends AbstractGitObject
                 'img_timestamp' => 'fa_timestamp'
             ),
             array(
-                'fa_name IN (\''. implode('\',\'', $file_names) . '\')',
+                'fa_name' => $file_names, // Builds an IN() clause
                 'fa_timestamp <= ' . wfTimestamp(TS_MW, wfTimestamp(TS_UNIX, $revision->getTimestamp()) + 2),
                 'fa_timestamp >= ' . $min_timestamp
             )
