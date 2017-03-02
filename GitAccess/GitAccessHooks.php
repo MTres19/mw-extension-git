@@ -218,7 +218,7 @@ class GitAccessHooks
      */
     public static function onUndeleteFormUndelete(PageArchive &$archive, Title $title)
     {
-        $GLOBALS['wgGitAccessFileUndeleteHooksFiles'] = $archive->listFiles; // *wince*
+        $GLOBALS['wgGitAccessFileUndeleteHooksFiles'] = $archive->listFiles(); // *wince*
     }
     
     /**
