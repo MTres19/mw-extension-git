@@ -184,9 +184,10 @@ class GitTree extends AbstractGitObject
      * 
      * @param int $rev_id The revision ID to build the tree at
      * @param int $log_id The log ID used for reference when building the tree.
+     * @param string $track The commit track being used to generate the tree
      * @return GitTree The root tree
      */
-    public static function newRoot($rev_id, $log_id)
+    public static function newRoot($rev_id, $log_id, $track)
     {
         $instance = self::newFromNamespace($rev_id, $log_id, NS_GITACCESS_ROOT);
         
@@ -216,6 +217,7 @@ class GitTree extends AbstractGitObject
                     $rev_id,
                     $log_id,
                     MWNamespace::getCanonicalIndex(strtolower($name)),
+                    $track,
                     $media_tree
                 );
             }
@@ -224,7 +226,8 @@ class GitTree extends AbstractGitObject
                 $ns_tree = self::newFromNamespace(
                     $rev_id,
                     $log_id,
-                    MWNamespace::getCanonicalIndex(strtolower($name))
+                    MWNamespace::getCanonicalIndex(strtolower($name)),
+                    $track
                 );
             }
             
@@ -266,11 +269,12 @@ class GitTree extends AbstractGitObject
      * @param int $rev_id The revision ID to build the tree at
      * @param int $log_id The log ID used for reference when building the tree.
      * @param int $ns_id The namespace ID to build the tree from
+     * @param string $track The commit track being used to generate the tree
      * @param GitTree &$media_tree (optional) The GitTree used to store files. Populated when
      * $ns_id is NS_FILE.
      * @return GitTree The generated GitTree
      */
-    public static function newFromNamespace($rev_id, $log_id, $ns_id, &$media_tree = null)
+    public static function newFromNamespace($rev_id, $log_id, $ns_id, $track, &$media_tree = null)
     {
         $dbw = wfGetDB(DB_MASTER);
         
