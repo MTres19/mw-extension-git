@@ -64,5 +64,17 @@ CREATE TABLE IF NOT EXISTS /*_*/git_hash(
     -- pushed from a Git client, the history will have to be examined to determine
     -- the track. For the very first default revision, this will be the same as
     -- the commit hash.
-    commit_track VARBINARY(40)
+    commit_track VARBINARY(40),
+    
+    -- Allows overriding up to 5 revisions to be the latest for the page at the time
+    -- of the commit. (Separated by commas). The only two entries that might go in here
+    -- for now are (1) an Aliases.xml that GitAccess had to update after the revision
+    -- corresponding to this commit was made or (2) a revision ID that is now the latest
+    -- one after a page was restored.
+    revs_override VARBINARY(9),
+    
+    -- Analogous to revs_override, but stores up to 5 image timestamps separated by
+    -- commas. Currently I can think of only one entry that would go here, that is,
+    -- for restored images that are not the latest version.
+    img_timestamp_override VARBINARY(74)
 )/*$wgDBTableOptions*/;
