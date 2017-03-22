@@ -17,6 +17,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// Don't reveal path when PHP fails to extend class
+if (!defined('MEDIAWIKI'))
+{
+    die('Not a valid entry point.');
+}
+
 class GitCommit extends AbstractGitObject
 {
     public $commit_hash;

@@ -19,6 +19,12 @@
  * @file
  */
 
+// Don't reveal path when PHP fails to extend class
+if (!defined('MEDIAWIKI'))
+{
+    die('Not a valid entry point.');
+}
+
 /**
  * Class interfacing between Git tree objects and MediaWiki's pages.
  */

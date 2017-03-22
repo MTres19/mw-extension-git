@@ -19,6 +19,12 @@
  * @file
  */
 
+// Don't reveal path when PHP fails to extend class
+if (!defined('MEDIAWIKI'))
+{
+    die('Not a valid entry point.');
+}
+
 /**
  * Populates the log_merge_* fields in the logging table from the
  * log_params column. This makes it much easier to query for history

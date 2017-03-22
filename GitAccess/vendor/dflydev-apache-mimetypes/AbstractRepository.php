@@ -1,5 +1,11 @@
 <?php
 
+// Don't reveal path when PHP fails to extend class
+if (!defined('MEDIAWIKI'))
+{
+    die('Not a valid entry point.');
+}
+
 /*
  * This file is a part of dflydev/apache-mime-types.
  *

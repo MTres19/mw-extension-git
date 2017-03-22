@@ -23,6 +23,12 @@
  * @file
  */
 
+// Don't reveal path when PHP fails to extend class
+if (!defined('MEDIAWIKI'))
+{
+    die('Not a valid entry point.');
+}
+
 /**
  * This class provides a special page for accessing content
  * with Git. It provides an information page but delegates

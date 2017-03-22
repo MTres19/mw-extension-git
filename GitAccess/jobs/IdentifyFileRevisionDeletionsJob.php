@@ -19,6 +19,12 @@
  * @file
  */
 
+// Don't reveal path when PHP fails to extend class
+if (!defined('MEDIAWIKI'))
+{
+    die('Not a valid entry point.');
+}
+
 /**
  * Populates the log_params field for individual file deletions
  * to mark them as separate from deletions of the entire page.
