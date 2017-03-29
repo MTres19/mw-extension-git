@@ -73,11 +73,11 @@ class IdentifyFileRevisionDeletionsJob
             {
                 if (strpos(
                     $row['log_comment'],
-                    wfMessage('colon-separator')->inContentLanguage()->text())
+                    wfMessage('colon-separator')->inContentLanguage()->plain())
                     !== false
                 )
                 {
-                    $pattern_final = $pattern . wfMessage('colon-separator')->inContentLanguage()->text();
+                    $pattern_final = $pattern . wfMessage('colon-separator')->inContentLanguage()->plain();
                 }
                 
                 else
